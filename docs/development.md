@@ -31,7 +31,7 @@ For database update, use the launcher to import local database and JWT configura
 ./scripts/start-backend.ps1 -MigrateOnly
 ```
 
-EF CLI does not load `.env` automatically. For direct EF commands, export database variables and `JWT_SECRET` into your process first. The startup project supplies configuration and dependency injection; the migration assembly is Infrastructure. Current migrations are `AccountsAndAuthentication`, `AgentIdentityAndApiKeys`, and `PersistedAgentActions`.
+EF CLI does not load `.env` automatically. For direct EF commands, export database variables and `JWT_SECRET` into your process first. The startup project supplies configuration and dependency injection; the migration assembly is Infrastructure. Current migrations are `AccountsAndAuthentication`, `AgentIdentityAndApiKeys`, `PersistedAgentActions`, and `DeterministicPolicies`. The local launcher also imports `PolicyDefaults__*` from ignored `.env`; only Review/Deny no-match defaults are accepted.
 
 ## Troubleshooting
 
@@ -45,6 +45,6 @@ EF CLI does not load `.env` automatically. For direct EF commands, export databa
 
 ## Phase boundaries
 
-Phase 2 implements organizations, authentication, JWT, refresh rotation, and roles. Phase 3 adds registered agents and hashed API keys. Phase 4 adds persisted action requests, validation, idempotency, and dashboard history. `./scripts/test-backend.ps1` runs all 79 tests, including HTTP integration tests against isolated PostgreSQL databases. PostgreSQL must be running and the configured role must be able to create test databases. Use `-UnitOnly` for 25 role, key-format, and canonical action validation tests without a database. See [authentication.md](authentication.md), [agents.md](agents.md), and [actions.md](actions.md).
+Phases 2–4 add accounts, organizations, agent identity, keys, persisted actions, and idempotency. Phase 5 adds deterministic policies, management, preview, and outcome snapshots. `./scripts/test-backend.ps1` runs all 140 tests in isolated PostgreSQL databases. The role must be able to create test databases. Use `-UnitOnly` for 69 role, key-format, action validation, and policy evaluator cases without a database. See [policies.md](policies.md) for the manual checklist.
 
-Policy evaluation, approvals, Slack, and audit history remain later phases. Development-only test allow results must not authorize real sensitive operations.
+Human approvals, Slack, and append-only audit history remain later phases. Review outcomes are held as awaiting_approval without approval records until Phase 6. Historical temporary test allows cannot be replayed through the agent API after Phase 5.

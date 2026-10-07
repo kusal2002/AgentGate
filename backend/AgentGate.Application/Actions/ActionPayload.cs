@@ -14,8 +14,8 @@ public static class ActionPayload
         if (!Identifier(request.Action, 100) || request.Resource is null || !Identifier(request.Resource.Type, 100)
             || !Text(request.Resource.Id, 200) || !Text(request.IdempotencyKey, 200))
             throw new RequestException(400, "Provide action, resource type/id, and an idempotency key within their length limits.");
-        var parameters = ObjectJson(request.Parameters, "Parameters");
-        var context = request.Context.ValueKind == JsonValueKind.Undefined ? "{}" : ObjectJson(request.Context, "Context");
+        var parameters = CanonicalizeObject(request.Parameters, "Parameters");
+        var context = request.Context.ValueKind == JsonValueKind.Undefined ? "{}" : CanonicalizeObject(request.Context, "Context");
         if (request.Action == "refund")
         {
             if (!request.Parameters.TryGetProperty("amount", out var amount) || amount.ValueKind != JsonValueKind.Number
@@ -30,7 +30,7 @@ public static class ActionPayload
     }
     private static bool Identifier(string? value, int length) => Text(value, length) && Regex.IsMatch(value!, "^[a-z][a-z0-9_.:-]*$");
     private static bool Text(string? value, int length) => !string.IsNullOrWhiteSpace(value) && value.Length <= length && value == value.Trim() && !value.Any(char.IsControl);
-    private static string ObjectJson(JsonElement value, string name)
+    public static string CanonicalizeObject(JsonElement value, string name)
     {
         if (value.ValueKind != JsonValueKind.Object || Encoding.UTF8.GetByteCount(value.GetRawText()) > 32_768)
             throw new RequestException(400, $"{name} must be a JSON object of at most 32 KiB.");

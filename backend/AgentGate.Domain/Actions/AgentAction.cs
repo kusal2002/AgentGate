@@ -17,6 +17,9 @@ public sealed class AgentAction
     public ActionRiskLevel? RiskLevel { get; set; }
     public ActionDecision Decision { get; set; }
     public Guid? MatchedPolicyId { get; set; }
+    public string? MatchedPolicyName { get; set; }
+    public string? ReviewerRole { get; set; }
+    public DateTimeOffset? PolicyUpdatedAt { get; set; }
     public string IdempotencyKey { get; set; } = "";
     public string RequestHash { get; set; } = "";
     public ActionStatus Status { get; set; }

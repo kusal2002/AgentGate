@@ -54,3 +54,11 @@ Frontend production build and lint passed. The `20261007064441_PersistedAgentAct
 Isolated Edge browser verification passed action list/filter/detail/reload, recent history per agent, one row on retry, 409 on changed payload, 413 for an oversized HTTP request, credential field display masking, desktop/mobile layout without horizontal overflow, empty browser credential storage, and no JavaScript runtime errors. Screenshots contain only synthetic data and masked credential fields. Browser services and their isolated database were removed after testing. Policy evaluation, approvals, external execution, and audit events remain future work.
 
 Windows follow-up: the test launcher now sends build outputs to ignored `.local-verification/backend-tests`, avoiding DLL locks from the running API. All 79 backend tests and 25 unit-only tests passed while the original API process stayed running; `/health/ready` remained healthy.
+
+## Phase 5 verification (2026-10-07)
+
+The deterministic policy engine replaces test allow. All 140 backend tests and 69 unit-only tests passed with zero build warnings/errors. Coverage includes the ten operators, typed/nested matching, missing/null fields, refund boundaries, priority/tie ordering, corruption denial, configurable Review/Deny defaults, role/tenant isolation, concurrent edits/seeding, preview/persisted agreement, production rules, retained historical outcome snapshots, and blocked legacy test allows. Frontend build and lint passed.
+
+The `20261007104059_DeterministicPolicies` migration was applied to the user's installed PostgreSQL without Docker, preserving existing records. No policies or demo credentials were automatically added to the user's organization.
+
+Isolated Edge checks passed all four refund previews, policy creation/edit, enable/disable, action policy snapshots/reload, Developer/Viewer UI restrictions, mobile builder/preview without overflow, empty credential browser storage, and no JavaScript runtime errors. Temporary services and browser database were removed. Approval creation/resolution and external execution remain outside Phase 5. See [policies.md](policies.md) for manual checks.

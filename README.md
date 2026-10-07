@@ -4,9 +4,9 @@
 
 ## Current milestone
 
-Phases 1–4 are implemented: the foundation, authentication/organizations, agent identity and secure API keys, and persisted action requests with concurrent idempotency and dashboard history. Policies, approvals, Slack, SDK, and the AI demo belong to later phases. See [authentication.md](docs/authentication.md), [agents.md](docs/agents.md), and [actions.md](docs/actions.md) for the implemented APIs.
+Phases 1–5 are implemented: the foundation, authentication/organizations, agent identity and secure API keys, persisted action requests with idempotency/history, and deterministic policies with management and testing screens. Human approvals, Slack, SDK, and the AI demo belong to later phases. See [authentication.md](docs/authentication.md), [agents.md](docs/agents.md), [actions.md](docs/actions.md), and [policies.md](docs/policies.md) for the implemented APIs.
 
-`POST /v1/actions/evaluate` now persists the specification's `action`, `resource`, `parameters`, `context`, and `idempotencyKey` request. Development agents on a Development server receive a temporary test `allow`; other environments deny until Phase 5's policy engine exists. No action is executed. The old `amountMinor` prototype has been replaced. See [Phase 4 manual checks](docs/actions.md#submit-and-check-a-request).
+`POST /v1/actions/evaluate` persists the specification's request and evaluates enabled organization policies, recording allow/review/deny, the matched rule, risk, reviewer role, and reason. With no match, Development agents default to review and Staging/Production to deny. Phase 4's temporary test allow is removed; historical test results cannot authorize policy-controlled work. No external action is executed. See [Phase 5 manual checks](docs/policies.md#setup-and-manual-checks).
 
 ## Repository
 
@@ -74,7 +74,7 @@ dotnet build backend/AgentGate.sln
 ./scripts/start-backend.ps1
 ```
 
-The script reads `POSTGRES_*`, `JWT_*`, and `ConnectionStrings__*` values from `.env` as data. Existing process environment variables take precedence. ASP.NET Core does not load dotenv files automatically. Outside PowerShell, set the database and JWT variables in your process and run `dotnet run --project backend/AgentGate.Api --launch-profile http`.
+The script reads `POSTGRES_*`, `JWT_*`, `ConnectionStrings__*`, and `PolicyDefaults__*` values from `.env` as data. Existing process environment variables take precedence. ASP.NET Core does not load dotenv files automatically. Outside PowerShell, set the database and JWT variables in your process and run `dotnet run --project backend/AgentGate.Api --launch-profile http`.
 
 Start the dashboard in another terminal:
 
@@ -84,9 +84,9 @@ npm ci
 npm run dev
 ```
 
-Open [the dashboard](http://localhost:5173) and create an account. The API listens at [localhost:5000](http://localhost:5000/health). Vite forwards `/api/*` to the backend, retaining the prefix for account APIs and stripping it for health endpoints. No CORS configuration is needed for local development. This proxy is a development feature; production hosting needs a same-origin HTTPS reverse proxy.
+Open [the dashboard](http://localhost:5173) and create an account. The API listens at [localhost:5000](http://localhost:5000/health). Vite forwards `/api/*` to the backend, retaining the prefix for account, agent, action, and policy APIs and stripping it for health endpoints. No CORS configuration is needed for local development. This proxy is a development feature; production hosting needs a same-origin HTTPS reverse proxy.
 
-The dashboard displays service health, accounts/organizations, agent management (including disable/enable and key expiry presets), and Actions history with filtering, pagination, details, and recent requests per agent. Approvals, Policies, and Audit log remain placeholders.
+The dashboard displays service health, accounts/organizations, agent management (including disable/enable and key expiry presets), and Actions history with filtering, pagination, details, and recent requests per agent. Policies includes rule management, a condition builder, and previews. Approvals and Audit log remain placeholders.
 
 ## Verify
 
@@ -101,7 +101,7 @@ Invoke-RestMethod http://localhost:5000/health/ready
 
 `/health` returns 200 while the API is running, independently of the database. `/health/ready` checks PostgreSQL and returns 200 if reachable or 503 otherwise. No credentials or exception details are returned to the browser.
 
-The migrations create users, organizations, memberships, hashed refresh sessions, agents, hashed API keys, and persisted actions. Apply them with the `-MigrateOnly` command above. Migration tooling and the workflow are described in [development.md](docs/development.md).
+The migrations create users, organizations, memberships, hashed refresh sessions, agents, hashed API keys, persisted actions, and policies. Apply them with the `-MigrateOnly` command above. Migration tooling and the workflow are described in [development.md](docs/development.md).
 
 Stop the database with `docker compose stop postgres`. Its data survives restart in the named volume. Changing `.env` does not change the password of an already initialized PostgreSQL volume; update the database role password or deliberately recreate the local volume.
 
@@ -115,5 +115,6 @@ Stop the database with `docker compose stop postgres`. Its data survives restart
 - [Organizations and authentication](docs/authentication.md)
 - [Agent identity and API keys](docs/agents.md)
 - [Persisted actions and phase verification](docs/actions.md)
+- [Policies and Phase 5 checks](docs/policies.md)
 
 The demo refund workflow is planned for later phases. No Slack app, tokens, or AI provider integration is created by this milestone.

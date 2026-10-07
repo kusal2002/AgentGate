@@ -41,6 +41,7 @@ public sealed class ActionStore(AgentGateDbContext db) : IActionStore
         var x = row.Action;
         return new(x.Id, x.AgentId, row.Name, x.ActionType, new(x.ResourceType, x.ResourceId), x.Decision.ToString().ToLowerInvariant(),
             ActionService.StatusName(x.Status), x.RiskLevel?.ToString(), x.CreatedAt, x.UpdatedAt, x.ExecutedAt, x.MatchedPolicyId,
-            x.IdempotencyKey, x.Reason, JsonSerializer.Deserialize<JsonElement>(x.ParametersJson), JsonSerializer.Deserialize<JsonElement>(x.ContextJson), x.TestEvaluation);
+            x.IdempotencyKey, x.Reason, JsonSerializer.Deserialize<JsonElement>(x.ParametersJson), JsonSerializer.Deserialize<JsonElement>(x.ContextJson), x.TestEvaluation,
+            x.MatchedPolicyName, x.ReviewerRole, x.PolicyUpdatedAt);
     }
 }

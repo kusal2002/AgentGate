@@ -105,10 +105,37 @@ export function ActionDetailRoute() {
                     <p className="text-xs text-muted-foreground">
                       Matched policy
                     </p>
-                    <p className="mt-1 break-all">
-                      {data.matchedPolicyId || "No policy evaluated"}
+                    {data.matchedPolicyId ? (
+                      <Link
+                        className="mt-1 inline-block break-all text-primary hover:underline"
+                        to={`/policies/${data.matchedPolicyId}`}
+                      >
+                        {data.matchedPolicyName || data.matchedPolicyId}
+                      </Link>
+                    ) : (
+                      <p className="mt-1">
+                        {data.testEvaluation
+                          ? "Legacy test result"
+                          : "Environment default"}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">
+                      Reviewer role
+                    </p>
+                    <p className="mt-1">
+                      {data.reviewerRole || "Not required"}
                     </p>
                   </div>
+                  {data.policyUpdatedAt && (
+                    <div>
+                      <p className="text-xs text-muted-foreground">
+                        Policy version evaluated
+                      </p>
+                      <p className="mt-1">{formatDate(data.policyUpdatedAt)}</p>
+                    </div>
+                  )}
                   <div className="sm:col-span-2">
                     <p className="text-xs text-muted-foreground">
                       Idempotency key

@@ -1,6 +1,6 @@
 # Phase 4: persisted action requests
 
-Phase 4 replaces the old `amountMinor` refund prototype with a generic, persisted action API. It adds validation, concurrent idempotency, agent-scoped retrieval, and tenant-scoped dashboard history. The policy engine, approvals, execution reporting, and append-only audit events belong to later phases.
+Phase 4 replaces the old `amountMinor` refund prototype with a generic, persisted action API. It adds validation, concurrent idempotency, agent-scoped retrieval, and tenant-scoped dashboard history. Phase 5 adds the policy engine; approvals, execution reporting, and append-only audit events belong to later phases.
 
 ## Setup
 
@@ -15,9 +15,9 @@ The migration adds `AgentActions`, a composite agent/organization foreign key, a
 
 ## Current evaluation behavior
 
-The specification's temporary test allow is restricted to **Development agents on a Development server**. Valid requests there return `allow` / `approved` with `testEvaluation: true`. Other agents or server environments return a persisted `deny` / `denied` because policies are not implemented yet. Replaying or retrieving a stored test result through the agent API outside local Development returns 403. Dashboard users can still inspect its historical record.
+Phase 5 now evaluates enabled organization policies. Requests return allow/approved, review/awaiting_approval, or deny/denied, with the matched rule, risk, reviewer, and reason. No-match defaults follow the agent environment: Development review, Staging/Production deny. See [policies.md](policies.md) for rule setup, configuration, and threshold tests.
 
-Approval here is a test result, not proof of policy authorization or execution. No refund, payment, email, approval request, or external tool is executed. Risk level, matched policy ID, and executed timestamp remain null. The dashboard labels test results and displays their explanation. The old prototype thresholds and `amountMinor` contract no longer apply.
+No external action is executed. Review requests have no approval ID until Phase 6. Historical Phase 4 test allow records remain visible in the dashboard, but agent replay/retrieval returns 403; submit with a new idempotency key for a real policy decision.
 
 ## Submit and check a request
 
@@ -31,7 +31,7 @@ $body = @{
     resource = @{ type = 'customer'; id = 'CUS-102' }
     parameters = @{ amount = 750; currency = 'USD'; reason = 'duplicate payment' }
     context = @{ customerTier = 'business' }
-    idempotencyKey = 'refund-order-8821'
+    idempotencyKey = 'phase5-refund-order-8821'
 } | ConvertTo-Json -Depth 10
 
 $first = Invoke-RestMethod http://localhost:5000/v1/actions/evaluate `
@@ -43,21 +43,11 @@ $first.actionId -eq $retry.actionId # True
 Invoke-RestMethod "http://localhost:5000/v1/actions/$($first.actionId)" -Headers $headers
 ```
 
-Expected result:
-
-```json
-{
-  "actionId": "a UUID identifying the stored action",
-  "decision": "allow",
-  "status": "approved",
-  "reason": "Development test evaluation only. No policy was evaluated and no action was executed.",
-  "testEvaluation": true
-}
-```
+With the demo rules from [policies.md](policies.md) installed, expect review / awaiting_approval, testEvaluation false, the Medium refund policy, risk Medium, and reviewer Reviewer. Without a matching rule, a Development agent defaults to review with High risk and no matched policy. No approval ID exists yet.
 
 Open **Actions** in the dashboard. There should be one row despite submitting twice. Filter by agent, open the action, check its resource/parameters/context and **Not executed** state, and reload. The agent detail page also shows its five most recent actions. History automatically refreshes every 30 seconds or with **Refresh actions**.
 
-Change `amount` to 751 and submit with the same idempotency key: expect **409**, with no new row. Use a new key for a new request. Disable the agent or revoke its key and submit again: expect **401**. Staging/Production agent keys receive `deny` with a saved history row. Never connect this temporary test allow to real sensitive operations.
+Change `amount` to 751 and submit with the same idempotency key: expect **409**, with no new row. Use a new key for a new request. Disable the agent or revoke its key and submit again: expect **401**. Staging/Production requests use their matching policies or default to deny. A policy change affects new requests; retries retain the original stored result.
 
 ## Request validation
 
@@ -79,7 +69,7 @@ Request hashes are SHA-256 over canonical payloads. Object property ordering and
 
 | Authentication | Method | Route | Behavior |
 | --- | --- | --- | --- |
-| Agent key | POST | `/v1/actions/evaluate` | Validate, persist, and return the current temporary evaluation |
+| Agent key | POST | `/v1/actions/evaluate` | Validate, evaluate policies, persist, and return the decision |
 | Agent key | GET | `/v1/actions/{id}` | Return the outcome for this agent's own stored action |
 | Human JWT | GET | `/api/actions?agentId=…&page=1&pageSize=25` | Paginated organization history; optional agent filter |
 | Human JWT | GET | `/api/actions/{id}` | Full organization-scoped details |
@@ -97,4 +87,4 @@ npm --prefix dashboard run build
 npm --prefix dashboard run lint
 ```
 
-The full suite has 79 tests; unit-only has 25. The test script uses separate build outputs in ignored `.local-verification/backend-tests`, so you can leave the API running during tests on Windows. PostgreSQL tests create and remove isolated databases. Coverage includes concurrent identical and conflicting retries, canonical hashing, restart persistence, validation and limits, tenant/agent/scheme separation, all role reads, pagination/filtering, and Development/Production test-result boundaries.
+The full suite has 140 tests; unit-only has 69. The test script uses separate build outputs in ignored `.local-verification/backend-tests`, so you can leave the API running during tests on Windows. PostgreSQL tests create and remove isolated databases. Coverage includes concurrent identical and conflicting retries, canonical hashing, restart persistence, validation and limits, tenant/agent/scheme separation, all role reads, pagination/filtering, policy evaluation, and legacy test-result boundaries.

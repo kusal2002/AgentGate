@@ -8,11 +8,12 @@ builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddAccountAuthentication(builder.Configuration);
 builder.Services.AddAgentAuthentication();
 builder.Services.AddScoped<ICurrentAgent, CurrentAgent>();
-builder.Services.AddSingleton<IActionEvaluator>(new DevelopmentActionEvaluator(builder.Environment.IsDevelopment()));
 builder.Services.AddControllers();
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<AccountExceptionHandler>();
 var app = builder.Build();
+// Validate configured fallback decisions before accepting requests.
+app.Services.GetRequiredService<AgentGate.Application.Policies.PolicyDefaults>();
 app.UseExceptionHandler();
 if (!app.Environment.IsDevelopment()) app.UseHttpsRedirection();
 app.UseRateLimiter();

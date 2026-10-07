@@ -148,8 +148,8 @@ export function ActionsPage() {
         </Button>
       </div>
       <p className="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm">
-        Development test requests can return allow. Policy evaluation and human
-        approvals come next. Approved requests have not been executed.
+        Enabled policies determine allow, review, or deny. Human
+        approval handling comes in Phase 6. Approved requests have not been executed.
       </p>
       <Card>
         <CardHeader>

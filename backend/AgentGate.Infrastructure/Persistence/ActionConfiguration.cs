@@ -21,6 +21,10 @@ public sealed class ActionConfiguration : IEntityTypeConfiguration<AgentAction>
         builder.Property(x => x.Status).HasConversion<string>().HasMaxLength(30);
         builder.Property(x => x.RiskLevel).HasConversion<string>().HasMaxLength(20);
         builder.Property(x => x.Reason).HasMaxLength(2000).IsRequired();
+        builder.Property(x => x.MatchedPolicyName).HasMaxLength(100);
+        builder.Property(x => x.ReviewerRole).HasMaxLength(20);
+        builder.HasOne<AgentGate.Domain.Policies.Policy>().WithMany().HasForeignKey(x => new { x.MatchedPolicyId, x.OrganizationId })
+            .HasPrincipalKey(x => new { x.Id, x.OrganizationId }).OnDelete(DeleteBehavior.Restrict);
         builder.HasIndex(x => new { x.OrganizationId, x.AgentId, x.IdempotencyKey }).IsUnique();
         builder.HasIndex(x => new { x.OrganizationId, x.CreatedAt, x.Id });
         builder.HasOne<Agent>().WithMany().HasForeignKey(x => new { x.AgentId, x.OrganizationId })
