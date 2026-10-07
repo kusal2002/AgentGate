@@ -28,3 +28,9 @@ Docker Desktop/CLI was unavailable, so Docker Compose startup and its container 
 Follow-up verification on 2026-10-07: configured the ignored local `.env` for the user's existing PostgreSQL installation, created the `agentgate` database, and verified `/health/ready` returned `healthy` on port 5432. Docker is optional and is not required for this local setup. Credentials remain in `.env` only.
 
 No authentication, persisted action, Slack, approval, SDK, or AI-agent acceptance tests apply yet. These features remain explicitly outside Phase 1.
+
+## Phase 2 verification (2026-10-07)
+
+Backend build and all 22 tests passed, including isolated PostgreSQL HTTP integration tests. Frontend production build and lint with warnings treated as failures passed. The account migration was applied to the user's local `agentgate` database without Docker. A random JWT signing secret was configured in the ignored `.env`.
+
+Isolated Edge browser verification passed registration, login, sign out, refresh on reload, organization rename/create/switch, HttpOnly/SameSite cookie checks, empty browser token storage, and desktop/mobile rendering with no horizontal overflow or JavaScript runtime errors. Test databases are removed afterward. See [authentication.md](authentication.md) for the complete behavior and test commands.

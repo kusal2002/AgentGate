@@ -2,7 +2,7 @@
 
 AgentGate will authenticate agent action requests, evaluate deterministic policies, obtain human approval where required, and retain an append-only audit trail. It will not depend on an LLM for authorization.
 
-## Phase 1 dependencies
+## Current dependencies
 
 ```text
 Domain <- Application <- Infrastructure
@@ -12,15 +12,15 @@ Domain <- Application <- Infrastructure
 Dashboard -- Vite proxy --> API --> Infrastructure --> PostgreSQL
 ```
 
-- **Domain:** no infrastructure packages or business entities in this phase.
-- **Application:** references Domain, reserved for contracts and use cases.
-- **Infrastructure:** references Application; owns EF Core, Npgsql connection setup, and database readiness checks.
-- **API:** references Application and Infrastructure; owns hosting and endpoint composition.
+- **Domain:** provider-independent User, Organization, OrganizationUser, AuthSession entities and role/status enums.
+- **Application:** references Domain; owns account use cases, validation contracts, DTOs, and persistence/password/token interfaces.
+- **Infrastructure:** references Application; owns EF Core, the account store, ASP.NET password hashing, Npgsql connection setup, and database readiness checks.
+- **API:** references Application and Infrastructure; owns thin controllers, JWT issuance/validation, rate limits, cookie handling, HTTP account context, and Problem Details.
 - **Dashboard:** React Router handles navigation; TanStack Query handles server health state; Tailwind v4 and local shadcn/ui components handle styling.
 
-Application and Domain intentionally have no placeholder business classes. Future models must carry organization ownership where appropriate and enforce tenant boundaries in every tenant query. No organization IDs are hard-coded here.
+Membership and session records carry organization ownership. Current organization comes from the JWT's validated database session. Member lookup always combines the organization ID with the member ID. User-specific organization lists filter by the authenticated user. No organization IDs are hard-coded.
 
-`AgentGateDbContext` is ready for entity configurations in Infrastructure. Database creation and migrations are explicit developer operations; startup does not call `EnsureCreated` or auto-migrate. No model means no initial migration in Phase 1.
+`AgentGateDbContext` scans entity configurations in Infrastructure. Database creation and migrations are explicit developer operations; startup does not call `EnsureCreated` or auto-migrate. Phase 2 adds the `AccountsAndAuthentication` migration, unique email/membership/session constraints, foreign keys, and optimistic concurrency for role updates.
 
 The legacy refund prototype remains in the API file to preserve existing behavior in Development. Before evolving it into the real action API, move decisions into Application/Domain services and add authentication, persistence, idempotency, and tests.
 
@@ -28,7 +28,7 @@ The legacy refund prototype remains in the API file to preserve existing behavio
 
 The database accepts `ConnectionStrings__AgentGate` as an override. Otherwise its connection string is built safely from `POSTGRES_HOST`, `POSTGRES_PORT`, `POSTGRES_DB`, `POSTGRES_USER`, and `POSTGRES_PASSWORD`. No password is present in source files or appsettings.
 
-The root `.env` feeds Docker Compose, the PowerShell backend launcher, and Vite. Only `VITE_` variables are exposed to browser code. The backend launcher imports only database-related variables and never evaluates their values as code.
+The root `.env` feeds optional Docker Compose, the PowerShell backend launcher, and Vite. Only `VITE_` variables are exposed to browser code. The backend launcher imports database and JWT variables and never evaluates their values as code. Authentication configuration requires a random `JWT_SECRET`; see [authentication.md](authentication.md).
 
 ## Health semantics
 

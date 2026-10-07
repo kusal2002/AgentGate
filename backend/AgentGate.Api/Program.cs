@@ -1,9 +1,20 @@
 using AgentGate.Infrastructure;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using AgentGate.Api.Authentication;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddAccountAuthentication(builder.Configuration);
+builder.Services.AddControllers();
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<AccountExceptionHandler>();
 var app = builder.Build();
+app.UseExceptionHandler();
+if (!app.Environment.IsDevelopment()) app.UseHttpsRedirection();
+app.UseAuthentication();
+app.UseAuthorization();
+app.UseRateLimiter();
+app.MapControllers();
 
 app.MapGet("/health", () => Results.Ok(new
 {
@@ -109,3 +120,5 @@ public record ActionParameters(
     long? AmountMinor,
     string? Currency
 );
+
+public partial class Program;
