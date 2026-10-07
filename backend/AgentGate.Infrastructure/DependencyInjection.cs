@@ -7,6 +7,8 @@ using AgentGate.Application.Accounts;
 using AgentGate.Infrastructure.Accounts;
 using AgentGate.Application.Agents;
 using AgentGate.Infrastructure.Agents;
+using AgentGate.Application.Actions;
+using AgentGate.Infrastructure.Actions;
 
 namespace AgentGate.Infrastructure;
 
@@ -37,6 +39,9 @@ public static class DependencyInjection
         services.AddScoped<IAgentStore, AgentStore>();
         services.AddScoped<IAgentService, AgentService>();
         services.AddScoped<IAgentKeyAuthenticator, AgentKeyAuthenticator>();
+        services.AddScoped<IActionStore, ActionStore>();
+        services.AddScoped<IActionService, ActionService>();
+        services.AddScoped<IActionHistoryService, ActionHistoryService>();
         services.AddHealthChecks().AddCheck<DatabaseHealthCheck>("postgresql", tags: ["ready"]);
         return services;
     }

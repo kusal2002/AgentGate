@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Copy, KeyRound } from "lucide-react";
 import { useAuth } from "@/auth/auth-provider";
 import { api } from "@/lib/api";
+import { RecentAgentActions } from "@/pages/actions";
 import {
   formatDate,
   type Agent,
@@ -197,15 +198,7 @@ function AgentDetail({ id }: { id: string }) {
           </CardContent>
         </Card>
         <AgentKeys agent={data} manager={manager} />
-        <Card>
-          <CardHeader>
-            <CardTitle>Action history</CardTitle>
-            <CardDescription>
-              Action requests, outcomes, and approval counts will be added after
-              the action API and policy engine are implemented.
-            </CardDescription>
-          </CardHeader>
-        </Card>
+        <RecentAgentActions agentId={data.id} orgId={orgId} />
       </div>
     </>
   );

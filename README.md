@@ -4,9 +4,9 @@
 
 ## Current milestone
 
-Phases 1–3 are implemented: the monorepo, .NET 10 backend, PostgreSQL persistence, dashboard, registration/login, JWT and revocable refresh sessions, organizations, memberships, five roles, agent registration/management, and hashed API keys with expiry and revocation. Persisted actions, policies, approvals, Slack, SDK, and the AI demo belong to later phases. See [authentication.md](docs/authentication.md) and [agents.md](docs/agents.md) for the implemented APIs.
+Phases 1–4 are implemented: the foundation, authentication/organizations, agent identity and secure API keys, and persisted action requests with concurrent idempotency and dashboard history. Policies, approvals, Slack, SDK, and the AI demo belong to later phases. See [authentication.md](docs/authentication.md), [agents.md](docs/agents.md), and [actions.md](docs/actions.md) for the implemented APIs.
 
-The original refund prototype remains available **only in a Development host and with an active Development agent key** at `POST /v1/actions/evaluate`. It accepts `amountMinor` and is not the future persisted action API. Do not use it to authorize real actions.
+`POST /v1/actions/evaluate` now persists the specification's `action`, `resource`, `parameters`, `context`, and `idempotencyKey` request. Development agents on a Development server receive a temporary test `allow`; other environments deny until Phase 5's policy engine exists. No action is executed. The old `amountMinor` prototype has been replaced. See [Phase 4 manual checks](docs/actions.md#submit-and-check-a-request).
 
 ## Repository
 
@@ -86,7 +86,7 @@ npm run dev
 
 Open [the dashboard](http://localhost:5173) and create an account. The API listens at [localhost:5000](http://localhost:5000/health). Vite forwards `/api/*` to the backend, retaining the prefix for account APIs and stripping it for health endpoints. No CORS configuration is needed for local development. This proxy is a development feature; production hosting needs a same-origin HTTPS reverse proxy.
 
-The dashboard displays live service health, registration/login, organization selection, organization Settings, and Agents screens for registration, editing, disabling, and one-time key generation/revocation. Approvals, Policies, and Audit log remain placeholders.
+The dashboard displays service health, accounts/organizations, agent management (including disable/enable and key expiry presets), and Actions history with filtering, pagination, details, and recent requests per agent. Approvals, Policies, and Audit log remain placeholders.
 
 ## Verify
 
@@ -101,18 +101,19 @@ Invoke-RestMethod http://localhost:5000/health/ready
 
 `/health` returns 200 while the API is running, independently of the database. `/health/ready` checks PostgreSQL and returns 200 if reachable or 503 otherwise. No credentials or exception details are returned to the browser.
 
-The migrations create users, organizations, memberships, hashed refresh sessions, agents, and hashed API keys. Apply them with the `-MigrateOnly` command above. Migration tooling and the workflow are described in [development.md](docs/development.md).
+The migrations create users, organizations, memberships, hashed refresh sessions, agents, hashed API keys, and persisted actions. Apply them with the `-MigrateOnly` command above. Migration tooling and the workflow are described in [development.md](docs/development.md).
 
 Stop the database with `docker compose stop postgres`. Its data survives restart in the named volume. Changing `.env` does not change the password of an already initialized PostgreSQL volume; update the database role password or deliberately recreate the local volume.
 
 ## Further documentation
 
 - [Architecture](docs/architecture.md)
-- [API and prototype](docs/api.md)
+- [API](docs/api.md)
 - [Development and migrations](docs/development.md)
 - [Slack setup roadmap](docs/slack-setup.md)
 - [Verification record](docs/verification.md)
 - [Organizations and authentication](docs/authentication.md)
 - [Agent identity and API keys](docs/agents.md)
+- [Persisted actions and phase verification](docs/actions.md)
 
 The demo refund workflow is planned for later phases. No Slack app, tokens, or AI provider integration is created by this milestone.

@@ -16,6 +16,6 @@ if (-not $UnitOnly -and -not $env:AGENTGATE_TEST_CONNECTION) {
     $env:AGENTGATE_TEST_CONNECTION = $connection.ConnectionString
 }
 $testProject = Join-Path $projectRoot 'backend/AgentGate.Tests'
-if ($UnitOnly) { dotnet test $testProject -m:1 --filter 'FullyQualifiedName~RoleRulesTests|FullyQualifiedName~AgentKeyCodecTests' }
+if ($UnitOnly) { dotnet test $testProject -m:1 --filter 'FullyQualifiedName~RoleRulesTests|FullyQualifiedName~AgentKeyCodecTests|FullyQualifiedName~ActionPayloadTests' }
 else { dotnet test $testProject -m:1 }
 exit $LASTEXITCODE

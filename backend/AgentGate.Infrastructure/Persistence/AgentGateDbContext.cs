@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using AgentGate.Domain.Accounts;
 using AgentGate.Domain.Agents;
+using AgentGate.Domain.Actions;
 
 namespace AgentGate.Infrastructure.Persistence;
 
@@ -13,6 +14,7 @@ public sealed class AgentGateDbContext(DbContextOptions<AgentGateDbContext> opti
     public DbSet<AuthSession> AuthSessions => Set<AuthSession>();
     public DbSet<Agent> Agents => Set<Agent>();
     public DbSet<AgentApiKey> AgentApiKeys => Set<AgentApiKey>();
+    public DbSet<AgentAction> AgentActions => Set<AgentAction>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

@@ -22,7 +22,7 @@ public sealed class AccountApiFactory : WebApplicationFactory<Program>, IAsyncLi
         builder.ConfigureHostConfiguration(config => config.AddInMemoryCollection(new Dictionary<string, string?>
         {
             ["ConnectionStrings:AgentGate"] = testConnection, ["JWT_SECRET"] = secret,
-            ["Auth:PermitLimit"] = "1000", ["Logging:LogLevel:Default"] = "None"
+            ["Auth:PermitLimit"] = "1000", ["AgentAuth:PermitLimit"] = "1000", ["Logging:LogLevel:Default"] = "None"
         }));
         return base.CreateHost(builder);
     }
@@ -34,6 +34,7 @@ public sealed class AccountApiFactory : WebApplicationFactory<Program>, IAsyncLi
             ["ConnectionStrings:AgentGate"] = testConnection,
             ["JWT_SECRET"] = secret,
             ["Auth:PermitLimit"] = "1000",
+            ["AgentAuth:PermitLimit"] = "1000",
             ["Logging:LogLevel:Default"] = "None"
         }));
     }

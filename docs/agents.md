@@ -58,12 +58,12 @@ Invoke-RestMethod http://localhost:5000/v1/agents/me -Headers @{
 }
 ```
 
-The existing Development-only `POST /v1/actions/evaluate` prototype now also requires an active **Development agent** key. It still accepts integer `amountMinor`, uses the original demo thresholds, and has no action persistence, approval creation, or idempotency. Staging/Production agent keys receive 403 from this local prototype; the route is absent outside a Development host. It must not be used as the production authorization gateway. Phase 4 will introduce the real persisted action API.
+Phase 4 replaced the `amountMinor` prototype with the persisted action API. Agent keys can submit requests and retrieve their own outcomes at `/v1/actions/*`; dashboard JWTs can read organization history. See [actions.md](actions.md) for the request contract, idempotency, and temporary Development test evaluation boundaries.
 
 ## Verification
 
-`./scripts/test-backend.ps1` runs all 49 tests in isolated PostgreSQL databases. `-UnitOnly` runs role and key-format tests without a database. `npm --prefix dashboard run build` and `npm --prefix dashboard run lint` verify the frontend.
+`./scripts/test-backend.ps1` runs the current backend suite in isolated PostgreSQL databases (79 tests after Phase 4). `-UnitOnly` runs role, key-format, and action payload tests without a database. `npm --prefix dashboard run build` and `npm --prefix dashboard run lint` verify the frontend.
 
-Coverage includes all five roles, tenant isolation across agents and keys, environment prefixes, random key generation, one-time responses and hash-only storage, immutable environments, server-derived identity, JWT/key scheme separation, tampered/malformed/unknown keys, revocation, expiry, agent disable, organization suspension, last-use tracking, input validation, the authenticated prototype boundary, and rate limiting before invalid-key authentication.
+Coverage includes all five roles, tenant isolation across agents and keys, environment prefixes, random key generation, one-time responses and hash-only storage, immutable environments, server-derived identity, JWT/key scheme separation, tampered/malformed/unknown keys, revocation, expiry, agent disable/enable, organization suspension, last-use tracking, input validation, action test evaluation boundaries, and rate limiting before invalid-key authentication.
 
 Edge browser checks passed agent creation/details/edit, key display/dismissal/reload, authentication, key revocation, disabling, Viewer restrictions, desktop/mobile layout, no horizontal overflow, empty credential browser storage, and no JavaScript runtime errors. Browser data was created in an isolated database and removed after testing.

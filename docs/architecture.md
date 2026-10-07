@@ -12,9 +12,9 @@ Domain <- Application <- Infrastructure
 Dashboard -- Vite proxy --> API --> Infrastructure --> PostgreSQL
 ```
 
-- **Domain:** provider-independent User, Organization, OrganizationUser, AuthSession, Agent, and AgentApiKey entities and role/status/environment enums.
-- **Application:** references Domain; owns account and agent use cases, validation contracts, DTOs, persistence/password/token interfaces, and API-key generation/verification.
-- **Infrastructure:** references Application; owns EF Core, account/agent stores, ASP.NET password hashing, Npgsql connection setup, and database readiness checks.
+- **Domain:** provider-independent account, agent, API-key, and AgentAction entities with role/status/environment/decision enums.
+- **Application:** references Domain; owns account, agent, and action use cases, validation/canonical hashing, DTOs, persistence/password/token interfaces, API-key generation/verification, and the Development test evaluator.
+- **Infrastructure:** references Application; owns EF Core account/agent/action stores, atomic insert-or-retrieve idempotency, ASP.NET password hashing, Npgsql connection setup, and database readiness checks.
 - **API:** references Application and Infrastructure; owns thin controllers, separate JWT and agent-key authentication schemes, rate limits, cookie handling, HTTP account context, and Problem Details.
 - **Dashboard:** React Router handles navigation; TanStack Query handles server health state; Tailwind v4 and local shadcn/ui components handle styling.
 
@@ -22,7 +22,7 @@ Membership and session records carry organization ownership. Current organizatio
 
 `AgentGateDbContext` scans entity configurations in Infrastructure. Database creation and migrations are explicit developer operations; startup does not call `EnsureCreated` or auto-migrate. `AccountsAndAuthentication` and `AgentIdentityAndApiKeys` establish unique keys, tenant/environment foreign keys, and optimistic concurrency for role and agent metadata updates.
 
-The legacy refund prototype remains in the API file to preserve its original demo behavior. Phase 3 restricts it to authenticated Development agents and a Development host. Phase 4 will move action handling into application services and add persistence/idempotency; deterministic policy services belong to Phase 5.
+Action handling now lives in application services and thin controllers. `PersistedAgentActions` stores JSONB payloads and immutable request hashes, enforces a unique tenant/agent/idempotency key, and links each action to an agent in the same tenant. Concurrent inserts resolve through the unique constraint. The Phase 4 Development evaluator grants test allow only for Development agents on a Development host; stored test results cannot be replayed through an agent API outside that boundary. Other environments persist deny. Deterministic policies belong to Phase 5. See [actions.md](actions.md).
 
 ## Configuration
 

@@ -31,7 +31,7 @@ For database update, use the launcher to import local database and JWT configura
 ./scripts/start-backend.ps1 -MigrateOnly
 ```
 
-EF CLI does not load `.env` automatically. For direct EF commands, export database variables and `JWT_SECRET` into your process first. The startup project supplies configuration and dependency injection; the migration assembly is Infrastructure. Current migrations are `AccountsAndAuthentication` and `AgentIdentityAndApiKeys`.
+EF CLI does not load `.env` automatically. For direct EF commands, export database variables and `JWT_SECRET` into your process first. The startup project supplies configuration and dependency injection; the migration assembly is Infrastructure. Current migrations are `AccountsAndAuthentication`, `AgentIdentityAndApiKeys`, and `PersistedAgentActions`.
 
 ## Troubleshooting
 
@@ -44,6 +44,6 @@ EF CLI does not load `.env` automatically. For direct EF commands, export databa
 
 ## Phase boundaries
 
-Phase 2 implements organizations, authentication, JWT, refresh rotation, and roles. Phase 3 adds registered agents and hashed API keys. `./scripts/test-backend.ps1` runs all 44 tests, including HTTP integration tests against isolated PostgreSQL databases. PostgreSQL must be running and the configured role must be able to create test databases. Use `-UnitOnly` for role and key-format rules without a database. See [authentication.md](authentication.md) and [agents.md](agents.md).
+Phase 2 implements organizations, authentication, JWT, refresh rotation, and roles. Phase 3 adds registered agents and hashed API keys. Phase 4 adds persisted action requests, validation, idempotency, and dashboard history. `./scripts/test-backend.ps1` runs all 79 tests, including HTTP integration tests against isolated PostgreSQL databases. PostgreSQL must be running and the configured role must be able to create test databases. Use `-UnitOnly` for 25 role, key-format, and canonical action validation tests without a database. See [authentication.md](authentication.md), [agents.md](agents.md), and [actions.md](actions.md).
 
-Phase 4 will add the persisted action API and idempotency. Policy evaluation, approvals, Slack, and audit history remain later phases.
+Policy evaluation, approvals, Slack, and audit history remain later phases. Development-only test allow results must not authorize real sensitive operations.
