@@ -32,4 +32,4 @@ HTTP 503 when PostgreSQL is unavailable; status and check status become `unhealt
 
 Phase 4 replaces the old refund prototype with persisted requests at `POST /v1/actions/evaluate` and agent-scoped retrieval at `GET /v1/actions/{id}`. The request requires action, resource, parameters, and an idempotency key; context is optional. Identical retries return one action, and changed payloads under the same key return 409.
 
-Human JWTs can read paginated organization history at `GET /api/actions` and details at `GET /api/actions/{id}`. Development agents on a Development server receive temporary test allow; other environments persist deny. No external action executes. See [actions.md](actions.md) for examples, limits, and verification steps.
+Human JWTs can read paginated organization history at `GET /api/actions` and details at `GET /api/actions/{id}`. Phase 5 evaluates enabled organization policies. No-match defaults follow the agent environment: Development review, Staging/Production deny. No external action executes. See [actions.md](actions.md) for request examples and limits, and [policies.md](policies.md) for policy APIs, defaults, and verification.

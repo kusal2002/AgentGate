@@ -11,7 +11,7 @@ function Import-AgentGateEnvironment {
                  ($settingValue.StartsWith("'") -and $settingValue.EndsWith("'")))) {
                 $settingValue = $settingValue.Substring(1, $settingValue.Length - 2)
             }
-            if ($settingName -match '^(POSTGRES_|JWT_|ConnectionStrings__)' -and
+            if ($settingName -match '^(POSTGRES_|JWT_|ConnectionStrings__|PolicyDefaults__)' -and
                 $null -eq [Environment]::GetEnvironmentVariable($settingName, 'Process')) {
                 [Environment]::SetEnvironmentVariable($settingName, $settingValue, 'Process')
             }

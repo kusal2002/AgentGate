@@ -49,17 +49,17 @@ public sealed class ActionApiTests(AccountApiFactory factory) : IClassFixture<Ac
     {
         var (owner, agent, agentId, session) = await Setup();
         var result = await Evaluate(agent, Request()); var id = result.GetProperty("actionId").GetGuid();
-        Assert.Equal("allow", result.GetProperty("decision").GetString());
-        Assert.Equal("approved", result.GetProperty("status").GetString());
-        Assert.True(result.GetProperty("testEvaluation").GetBoolean());
+        Assert.Equal("review", result.GetProperty("decision").GetString());
+        Assert.Equal("awaiting_approval", result.GetProperty("status").GetString());
+        Assert.False(result.GetProperty("testEvaluation").GetBoolean());
         var detail = await owner.GetFromJsonAsync<JsonElement>($"/api/actions/{id}");
         Assert.Equal(agentId, detail.GetProperty("agentId").GetGuid());
         Assert.Equal(750, detail.GetProperty("parameters").GetProperty("amount").GetDecimal());
         Assert.Equal("business", detail.GetProperty("context").GetProperty("customerTier").GetString());
         Assert.Equal(JsonValueKind.Null, detail.GetProperty("executedAt").ValueKind);
-        Assert.Equal(JsonValueKind.Null, detail.GetProperty("riskLevel").ValueKind);
+        Assert.Equal("High", detail.GetProperty("riskLevel").GetString());
         Assert.Equal(JsonValueKind.Null, detail.GetProperty("matchedPolicyId").ValueKind);
-        Assert.Contains("No policy", detail.GetProperty("reason").GetString());
+        Assert.Contains("No enabled policy", detail.GetProperty("reason").GetString());
         using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AgentGateDbContext>();
@@ -139,14 +139,22 @@ public sealed class ActionApiTests(AccountApiFactory factory) : IClassFixture<Ac
         Assert.Equal("denied", result.GetProperty("status").GetString());
     }
     [Fact]
-    public async Task ProductionHostNeverUsesTestAllowEvenForDevelopmentAgent()
+    public async Task LegacyTestAllowsCannotBeReplayedAfterPolicyEngineIsInstalled()
     {
         var (_, agent, _, _) = await Setup();
         var testResult = await Evaluate(agent, Request("existing-test"));
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AgentGateDbContext>();
+            await db.AgentActions.Where(x => x.Id == testResult.GetProperty("actionId").GetGuid())
+                .ExecuteUpdateAsync(set => set.SetProperty(x => x.TestEvaluation, true)
+                    .SetProperty(x => x.Decision, AgentGate.Domain.Actions.ActionDecision.Allow)
+                    .SetProperty(x => x.Status, AgentGate.Domain.Actions.ActionStatus.Approved));
+        }
         using var production = factory.WithWebHostBuilder(builder => builder.UseEnvironment("Production"));
         var client = production.CreateClient(new() { BaseAddress = new Uri("https://localhost"), AllowAutoRedirect = false });
         client.DefaultRequestHeaders.Authorization = agent.DefaultRequestHeaders.Authorization;
-        Assert.Equal("deny", (await Evaluate(client, Request())).GetProperty("decision").GetString());
+        Assert.Equal("review", (await Evaluate(client, Request())).GetProperty("decision").GetString());
         Assert.Equal(HttpStatusCode.Forbidden, (await client.PostAsJsonAsync("/v1/actions/evaluate", Request("existing-test"))).StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, (await client.GetAsync($"/v1/actions/{testResult.GetProperty("actionId").GetGuid()}")).StatusCode);
     }

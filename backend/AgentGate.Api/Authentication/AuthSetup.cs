@@ -54,6 +54,8 @@ public static class AuthSetup
         {
             options.AddPolicy("ManageOrganization", policy => policy.RequireRole("Owner", "Admin"));
             options.AddPolicy("ManageAgents", policy => policy.RequireRole("Owner", "Admin", "Developer"));
+            options.AddPolicy("ManagePolicies", policy => policy.RequireRole("Owner", "Admin"));
+            options.AddPolicy("TestPolicies", policy => policy.RequireRole("Owner", "Admin", "Developer"));
             options.AddPolicy("ReviewActions", policy => policy.RequireRole("Owner", "Admin", "Reviewer"));
         });
         services.AddRateLimiter(options =>

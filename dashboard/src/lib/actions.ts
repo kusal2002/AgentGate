@@ -15,6 +15,9 @@ export type ActionDetail = ActionSummary & {
   updatedAt: string;
   executedAt: string | null;
   matchedPolicyId: string | null;
+  matchedPolicyName: string | null;
+  reviewerRole: string | null;
+  policyUpdatedAt: string | null;
   idempotencyKey: string;
   reason: string;
   parameters: Record<string, unknown>;

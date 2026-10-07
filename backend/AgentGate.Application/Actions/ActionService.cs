@@ -11,13 +11,14 @@ public sealed class ActionService(IActionStore store, ICurrentAgent current, IAc
         var payload = ActionPayload.ValidateAndCanonicalize(request);
         var existing = await store.FindAsync(current.OrganizationId, current.AgentId, request.IdempotencyKey, ct);
         if (existing is not null) return Replay(existing, payload.Hash);
-        var result = evaluator.Evaluate(request, current.Environment);
+        var result = await evaluator.EvaluateAsync(request, current.Environment, ct);
         var action = new AgentAction
         {
             OrganizationId = current.OrganizationId, AgentId = current.AgentId, ActionType = request.Action,
             ResourceType = request.Resource.Type, ResourceId = request.Resource.Id,
             ParametersJson = payload.Parameters, ContextJson = payload.Context, RequestHash = payload.Hash,
-            IdempotencyKey = request.IdempotencyKey, Decision = result.Decision, Status = result.Status, Reason = result.Reason, TestEvaluation = result.TestEvaluation
+            IdempotencyKey = request.IdempotencyKey, Decision = result.Decision, Status = result.Status, Reason = result.Reason, TestEvaluation = result.TestEvaluation,
+            MatchedPolicyId = result.MatchedPolicyId, MatchedPolicyName = result.MatchedPolicyName, ReviewerRole = result.ReviewerRole, RiskLevel = result.RiskLevel, PolicyUpdatedAt = result.PolicyUpdatedAt
         };
         // The database resolves concurrent retries using the unique tenant/agent/key constraint.
         return Replay(await store.CreateOrGetAsync(action, ct), payload.Hash);
@@ -38,20 +39,11 @@ public sealed class ActionService(IActionStore store, ICurrentAgent current, IAc
     private void EnsureTestBoundary(AgentAction action)
     {
         if (action.TestEvaluation && !evaluator.CanUseTestResults(current.Environment))
-            throw new RequestException(403, "Development test results cannot authorize actions in this environment.");
+            throw new RequestException(403, "Legacy test results cannot authorize policy-controlled actions. Submit with a new idempotency key.");
     }
-    public static EvaluationDto Map(AgentAction action) => new(action.Id, action.Decision.ToString().ToLowerInvariant(), StatusName(action.Status), action.Reason, action.TestEvaluation);
+    public static EvaluationDto Map(AgentAction action) => new(action.Id, action.Decision.ToString().ToLowerInvariant(), StatusName(action.Status), action.Reason, action.TestEvaluation,
+        action.MatchedPolicyId, action.MatchedPolicyName, action.ReviewerRole, action.RiskLevel?.ToString(), action.PolicyUpdatedAt);
     public static string StatusName(ActionStatus status) => status == ActionStatus.AwaitingApproval ? "awaiting_approval" : status.ToString().ToLowerInvariant();
-}
-
-// Phase 4's temporary test evaluator is deliberately restricted to local Development.
-// Replace this implementation with deterministic policies in Phase 5.
-public sealed class DevelopmentActionEvaluator(bool developmentHost) : IActionEvaluator
-{
-    public bool CanUseTestResults(string agentEnvironment) => developmentHost && agentEnvironment == "Development";
-    public ActionEvaluation Evaluate(EvaluateActionRequest request, string agentEnvironment) => CanUseTestResults(agentEnvironment)
-        ? new(ActionDecision.Allow, ActionStatus.Approved, "Development test evaluation only. No policy was evaluated and no action was executed.", true)
-        : new(ActionDecision.Deny, ActionStatus.Denied, "The policy engine is not available yet. Actions outside local Development testing are denied.");
 }
 
 public sealed class ActionHistoryService(IActionStore store, ICurrentAccount current) : IActionHistoryService
