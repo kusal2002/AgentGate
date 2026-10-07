@@ -3,6 +3,7 @@ using System;
 using AgentGate.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace AgentGate.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(AgentGateDbContext))]
-    partial class AgentGateDbContextModelSnapshot : ModelSnapshot
+    [Migration("20261007144634_SlackIntegration")]
+    partial class SlackIntegration
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -621,48 +624,6 @@ namespace AgentGate.Infrastructure.Persistence.Migrations
                     b.ToTable("SlackDeliveries");
                 });
 
-            modelBuilder.Entity("AgentGate.Domain.Slack.SlackFeedback", b =>
-                {
-                    b.Property<string>("RequestKey")
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
-
-                    b.Property<string>("ChannelId")
-                        .IsRequired()
-                        .HasMaxLength(40)
-                        .HasColumnType("character varying(40)");
-
-                    b.Property<DateTimeOffset>("ExpiresAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTimeOffset>("NextAttemptAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("OrganizationId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset?>("SentAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("SlackUserId")
-                        .IsRequired()
-                        .HasMaxLength(40)
-                        .HasColumnType("character varying(40)");
-
-                    b.Property<string>("Text")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.HasKey("RequestKey");
-
-                    b.HasIndex("NextAttemptAt");
-
-                    b.HasIndex("OrganizationId");
-
-                    b.ToTable("SlackFeedback");
-                });
-
             modelBuilder.Entity("AgentGate.Domain.Slack.SlackIntegration", b =>
                 {
                     b.Property<Guid>("OrganizationId")
@@ -810,15 +771,6 @@ namespace AgentGate.Infrastructure.Persistence.Migrations
                         .WithMany()
                         .HasForeignKey("ApprovalId", "OrganizationId")
                         .HasPrincipalKey("Id", "OrganizationId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("AgentGate.Domain.Slack.SlackFeedback", b =>
-                {
-                    b.HasOne("AgentGate.Domain.Accounts.Organization", null)
-                        .WithMany()
-                        .HasForeignKey("OrganizationId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });

@@ -28,6 +28,7 @@ public sealed class ApprovalDecisionConfiguration : IEntityTypeConfiguration<App
     {
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Decision).HasConversion<string>().HasMaxLength(20);
+        builder.Property(x => x.Source).HasConversion<string>().HasMaxLength(20).HasDefaultValue(ApprovalDecisionSource.Dashboard);
         builder.Property(x => x.Comment).HasMaxLength(2000).IsRequired();
         builder.HasIndex(x => new { x.OrganizationId, x.ApprovalRequestId }).IsUnique();
         builder.HasOne<ApprovalRequest>().WithMany().HasForeignKey(x => new { x.ApprovalRequestId, x.OrganizationId })

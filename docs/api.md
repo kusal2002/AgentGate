@@ -39,3 +39,9 @@ Human JWTs can read paginated organization history at `GET /api/actions` and det
 Review outcomes create an approval atomically with the action. Human JWTs read `/api/approvals` and `/api/approvals/{id}` and resolve requests with POST `/api/approvals/{id}/approve` or `/reject`. The POST routes also have `/v1/approvals/{id}/approve` and `/reject` aliases and still require human authentication.
 
 Agent keys poll their own requests at GET `/v1/approvals/{id}`. Required reviewer roles, comments, expiry, conflicts, and response contracts are documented in [approvals.md](approvals.md). Approval changes action status while retaining the original policy decision; no external action executes.
+
+## Slack integration
+
+Human JWTs read `GET /api/integrations/slack`. Owner/Admin can `PUT /api/integrations/slack` with `{ channelId, enabled }`, `PUT /api/integrations/slack/reviewers` with `{ userId, slackUserId }`, and `DELETE /api/integrations/slack/reviewers/{userId}`. Configuration is limited to the deployment's configured organization; identity and tenant override fields are rejected. Read responses include availability, organization/workspace, channel, enabled state, mappings, and failed delivery count; credentials are never returned.
+
+`POST /api/integrations/slack/actions` accepts URL-encoded Slack interaction payloads with signature/timestamp headers, independently of human/agent authentication. Raw signatures are checked before form parsing. Callbacks must match a delivered message, app/workspace, and authorized reviewer. Acknowledgments are quick; the worker updates the shared message and sends private feedback through Slack's fixed Web API. See [slack-setup.md](slack-setup.md) for installation and live checks.

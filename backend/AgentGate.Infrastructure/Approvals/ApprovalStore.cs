@@ -32,7 +32,7 @@ public sealed class ApprovalStore(AgentGateDbContext db) : IApprovalStore
         var agentName = await db.Agents.Where(x => x.OrganizationId == organizationId && x.Id == action.AgentId).Select(x => x.Name).SingleAsync(ct);
         var decisions = await db.ApprovalDecisions.AsNoTracking().Where(x => x.OrganizationId == organizationId && x.ApprovalRequestId == id)
             .Join(db.Users, x => x.ReviewerUserId, x => x.Id, (decision, user) => new ApprovalDecisionDto(decision.Id, user.Id, user.Name,
-                decision.Decision == ApprovalDecisionType.Approve ? "approve" : "reject", decision.Comment, decision.CreatedAt)).ToListAsync(ct);
+                decision.Decision == ApprovalDecisionType.Approve ? "approve" : "reject", decision.Comment, decision.CreatedAt, decision.Source == ApprovalDecisionSource.Slack ? "slack" : "dashboard")).ToListAsync(ct);
         return new(Summary(approval, action, agentName), ActionStore.MapDetail(action, agentName), false, approval.ResolvedByUserId, approval.ReviewerComment, decisions);
     }
     public async Task<AgentApprovalDto?> GetAgentAsync(Guid organizationId, Guid agentId, Guid id, CancellationToken ct)
@@ -47,7 +47,7 @@ public sealed class ApprovalStore(AgentGateDbContext db) : IApprovalStore
         var x = row.Approval;
         return new(x.Id, x.ActionId, x.Status.ToString().ToLowerInvariant(), ActionService.StatusName(row.Action.Status), x.ReviewerRole, x.RequestedAt, x.ExpiresAt, x.ResolvedAt);
     }
-    public async Task ResolveAsync(Guid organizationId, Guid userId, Guid id, bool approve, string comment, CancellationToken ct)
+    public async Task ResolveAsync(Guid organizationId, Guid userId, Guid id, bool approve, string comment, CancellationToken ct, ApprovalDecisionSource source = ApprovalDecisionSource.Dashboard)
     {
         await using var transaction = await db.Database.BeginTransactionAsync(ct);
         // All human and expiry transitions lock the same row first.
@@ -72,7 +72,7 @@ public sealed class ApprovalStore(AgentGateDbContext db) : IApprovalStore
         approval.ResolvedAt = now; approval.ResolvedByUserId = userId; approval.ReviewerComment = comment; approval.UpdatedAt = now;
         action.Status = approve ? ActionStatus.Approved : ActionStatus.Rejected; action.UpdatedAt = now;
         db.ApprovalDecisions.Add(new() { OrganizationId = organizationId, ApprovalRequestId = id, ReviewerUserId = userId,
-            Decision = approve ? ApprovalDecisionType.Approve : ApprovalDecisionType.Reject, Comment = comment, CreatedAt = now });
+            Decision = approve ? ApprovalDecisionType.Approve : ApprovalDecisionType.Reject, Source = source, Comment = comment, CreatedAt = now });
         await db.SaveChangesAsync(ct); await transaction.CommitAsync(ct);
     }
     public async Task ExpireDueAsync(Guid? organizationId, CancellationToken ct, Guid? actionId = null, Guid? approvalId = null)
@@ -105,7 +105,7 @@ public sealed class ApprovalStore(AgentGateDbContext db) : IApprovalStore
         if (action.Status == ActionStatus.AwaitingApproval) { action.Status = ActionStatus.Cancelled; action.UpdatedAt = now; }
     }
     private Task<DateTimeOffset> DatabaseNow(CancellationToken ct) => db.Database.SqlQueryRaw<DateTimeOffset>("SELECT clock_timestamp() AS \"Value\"").SingleAsync(ct);
-    private static ApprovalSummaryDto Summary(ApprovalRequest x, AgentAction action, string name)
+    internal static ApprovalSummaryDto Summary(ApprovalRequest x, AgentAction action, string name)
     {
         var parameters = JsonSerializer.Deserialize<JsonElement>(action.ParametersJson);
         decimal? amount = action.ActionType == "refund" && parameters.TryGetProperty("amount", out var value) && value.TryGetDecimal(out var number) ? number : null;

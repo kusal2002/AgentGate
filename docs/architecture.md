@@ -39,3 +39,9 @@ Liveness (`/health`) reports that the HTTP host is running. Readiness (`/health/
 `HumanApprovals` links each approval to an action in the same tenant using a composite foreign key and unique index. Action and approval insertion share one EF transaction. Human resolution and deadline expiry lock the same approval row and update approval/action state in one transaction. The database clock defines the deadline; current membership defines reviewer eligibility. A unique decision index allows one winning human decision, and EF guards plus a PostgreSQL trigger prevent decision updates/deletes.
 
 The background worker expires batches every 30 seconds. Tenant-scoped reads also refresh due requests, and resolution checks expiry while holding the lock. Pending requests survive restarts. See [approvals.md](approvals.md) for roles, migration backfill, and timeout configuration.
+
+## Slack boundary
+
+Phase 7 keeps bot credentials/signing secrets in server environment configuration and binds the installation to one workspace/organization. Persistent integration settings and explicitly verified reviewer mappings are tenant-scoped. Durable scanning discovers committed pending approvals without coupling agent submission to Slack availability. Delivery locks serialize each tracked message; no approval lock is held during outbound HTTP. The worker updates terminal outcomes and retries failures, respecting Slack backoff.
+
+An API resource filter validates raw signatures before MVC consumes forms. Callback message/app/workspace references must match database deliveries, and the stored user mapping feeds the existing transactional approval permission checks. Immutable decisions record their Dashboard/Slack source. Durable private feedback uses `chat.postEphemeral`; callback-provided URLs are never followed. Remote delivery can duplicate after an ambiguous network failure, but database approval resolution remains single-winner. See [slack-setup.md](slack-setup.md).

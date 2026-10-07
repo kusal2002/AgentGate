@@ -1,6 +1,6 @@
 # Phase 6: human approvals
 
-Review actions now create a pending approval in the same database transaction as the action. Human decisions update the approval and action together and append one immutable decision record. Agent keys can poll the outcome. No external action is executed by approval, and Slack is Phase 7.
+Review actions now create a pending approval in the same database transaction as the action. Human decisions update the approval and action together and append one immutable decision record. Agent keys can poll the outcome. No external action is executed by approval, Slack notifications and decisions are available in Phase 7; see [slack-setup.md](slack-setup.md).
 
 ## Local setup
 
@@ -110,4 +110,4 @@ npm --prefix dashboard run build
 npm --prefix dashboard run lint
 ```
 
-The full suite has 175 tests and unit-only has 82. Coverage includes approval/rejection aliases, role hierarchy, tenant/agent/scheme separation, concurrent retries, mixed decisions, expiry races and maintenance, transaction rollback, restart/configuration, migration backfill, append-only protection, comments/input validation, filtering, and pagination. Integration tests create/drop isolated PostgreSQL databases.
+The full suite has 207 tests and unit-only has 96. Coverage includes approval/rejection aliases, role hierarchy, tenant/agent/scheme separation, concurrent retries, mixed decisions, expiry races and maintenance, transaction rollback, restart/configuration, migration backfill, append-only protection, comments/input validation, filtering, and pagination. Integration tests create/drop isolated PostgreSQL databases.

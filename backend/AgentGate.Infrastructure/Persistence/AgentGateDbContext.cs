@@ -20,6 +20,10 @@ public sealed class AgentGateDbContext(DbContextOptions<AgentGateDbContext> opti
     public DbSet<Policy> Policies => Set<Policy>();
     public DbSet<ApprovalRequest> ApprovalRequests => Set<ApprovalRequest>();
     public DbSet<ApprovalDecision> ApprovalDecisions => Set<ApprovalDecision>();
+    public DbSet<AgentGate.Domain.Slack.SlackIntegration> SlackIntegrations => Set<AgentGate.Domain.Slack.SlackIntegration>();
+    public DbSet<AgentGate.Domain.Slack.SlackReviewer> SlackReviewers => Set<AgentGate.Domain.Slack.SlackReviewer>();
+    public DbSet<AgentGate.Domain.Slack.SlackDelivery> SlackDeliveries => Set<AgentGate.Domain.Slack.SlackDelivery>();
+    public DbSet<AgentGate.Domain.Slack.SlackFeedback> SlackFeedback => Set<AgentGate.Domain.Slack.SlackFeedback>();
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         GuardDecisions();
