@@ -11,9 +11,11 @@ builder.Services.AddScoped<ICurrentAgent, CurrentAgent>();
 builder.Services.AddControllers();
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<AccountExceptionHandler>();
+builder.Services.AddHostedService<AgentGate.Api.Approvals.ApprovalExpiryWorker>();
 var app = builder.Build();
 // Validate configured fallback decisions before accepting requests.
 app.Services.GetRequiredService<AgentGate.Application.Policies.PolicyDefaults>();
+app.Services.GetRequiredService<AgentGate.Application.Approvals.ApprovalSettings>();
 app.UseExceptionHandler();
 if (!app.Environment.IsDevelopment()) app.UseHttpsRedirection();
 app.UseRateLimiter();

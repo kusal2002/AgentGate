@@ -62,3 +62,11 @@ The deterministic policy engine replaces test allow. All 140 backend tests and 6
 The `20261007104059_DeterministicPolicies` migration was applied to the user's installed PostgreSQL without Docker, preserving existing records. No policies or demo credentials were automatically added to the user's organization.
 
 Isolated Edge checks passed all four refund previews, policy creation/edit, enable/disable, action policy snapshots/reload, Developer/Viewer UI restrictions, mobile builder/preview without overflow, empty credential browser storage, and no JavaScript runtime errors. Temporary services and browser database were removed. Approval creation/resolution and external execution remain outside Phase 5. See [policies.md](policies.md) for manual checks.
+
+## Phase 6 verification (2026-10-07)
+
+All 175 backend tests and the 82-test unit-only subset passed. Frontend production build and lint passed. Approval coverage includes atomic action/request insertion and rollback, concurrent idempotent submissions, competing approve/reject transitions, deadline races, reviewer hierarchy, tenant/agent/authentication isolation, immutable decision records, restart persistence, configurable timeout, migration backfill, and global expiry maintenance. Concurrent demo-policy seeding now serializes on the organization row to avoid insert-order deadlocks.
+
+The `20261007120412_HumanApprovals` migration was applied to the user's installed PostgreSQL. Existing unresolved non-test review actions receive pending approvals with a fresh 24-hour deadline.
+
+Isolated Edge checks passed pending list/details, masked payloads, Viewer restrictions, Reviewer approval with persisted name/comment, Owner rejection, expired/cancelled outcomes, agent polling, status filters, action-to-approval navigation, and desktop/mobile layout without overflow. Browser credential storage stayed empty and no JavaScript runtime errors occurred. Temporary services and their isolated database were removed. No external action executes; Slack, audit events, and SDK integration remain later phases. See [approvals.md](approvals.md) for the manual checklist.

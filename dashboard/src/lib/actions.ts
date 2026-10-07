@@ -18,6 +18,8 @@ export type ActionDetail = ActionSummary & {
   matchedPolicyName: string | null;
   reviewerRole: string | null;
   policyUpdatedAt: string | null;
+  approvalId: string | null;
+  approvalStatus: string | null;
   idempotencyKey: string;
   reason: string;
   parameters: Record<string, unknown>;

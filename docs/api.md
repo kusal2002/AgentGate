@@ -33,3 +33,9 @@ HTTP 503 when PostgreSQL is unavailable; status and check status become `unhealt
 Phase 4 replaces the old refund prototype with persisted requests at `POST /v1/actions/evaluate` and agent-scoped retrieval at `GET /v1/actions/{id}`. The request requires action, resource, parameters, and an idempotency key; context is optional. Identical retries return one action, and changed payloads under the same key return 409.
 
 Human JWTs can read paginated organization history at `GET /api/actions` and details at `GET /api/actions/{id}`. Phase 5 evaluates enabled organization policies. No-match defaults follow the agent environment: Development review, Staging/Production deny. No external action executes. See [actions.md](actions.md) for request examples and limits, and [policies.md](policies.md) for policy APIs, defaults, and verification.
+
+## Human approvals
+
+Review outcomes create an approval atomically with the action. Human JWTs read `/api/approvals` and `/api/approvals/{id}` and resolve requests with POST `/api/approvals/{id}/approve` or `/reject`. The POST routes also have `/v1/approvals/{id}/approve` and `/reject` aliases and still require human authentication.
+
+Agent keys poll their own requests at GET `/v1/approvals/{id}`. Required reviewer roles, comments, expiry, conflicts, and response contracts are documented in [approvals.md](approvals.md). Approval changes action status while retaining the original policy decision; no external action executes.

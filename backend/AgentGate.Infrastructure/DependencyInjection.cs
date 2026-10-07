@@ -12,6 +12,8 @@ using AgentGate.Infrastructure.Actions;
 using AgentGate.Application.Policies;
 using AgentGate.Infrastructure.Policies;
 using AgentGate.Domain.Actions;
+using AgentGate.Application.Approvals;
+using AgentGate.Infrastructure.Approvals;
 
 namespace AgentGate.Infrastructure;
 
@@ -45,6 +47,15 @@ public static class DependencyInjection
         services.AddScoped<IActionStore, ActionStore>();
         services.AddScoped<IActionService, ActionService>();
         services.AddScoped<IActionHistoryService, ActionHistoryService>();
+        services.AddSingleton(provider =>
+        {
+            var config = provider.GetRequiredService<IConfiguration>();
+            var timeout = config.GetValue("Approvals:TimeoutMinutes", 1440);
+            if (timeout is < 1 or > 10080) throw new InvalidOperationException("Approvals:TimeoutMinutes must be between 1 and 10080.");
+            return new ApprovalSettings(timeout);
+        });
+        services.AddScoped<IApprovalStore, ApprovalStore>();
+        services.AddScoped<IApprovalService, ApprovalService>();
         services.AddSingleton(provider =>
         {
             var policyConfiguration = provider.GetRequiredService<IConfiguration>();
