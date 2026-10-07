@@ -22,6 +22,8 @@ public sealed class AgentsController(IAgentService agents) : ControllerBase
     public async Task<IActionResult> Update(Guid id, UpdateAgentRequest request, CancellationToken ct) => Ok(await agents.UpdateAsync(id, request, ct));
     [HttpPost("{id:guid}/disable"), Authorize(Policy = "ManageAgents")]
     public async Task<IActionResult> Disable(Guid id, CancellationToken ct) { await agents.DisableAsync(id, ct); return NoContent(); }
+    [HttpPost("{id:guid}/enable"), Authorize(Policy = "ManageAgents")]
+    public async Task<IActionResult> Enable(Guid id, CancellationToken ct) { await agents.EnableAsync(id, ct); return NoContent(); }
     [HttpGet("{id:guid}/keys")]
     public async Task<IActionResult> Keys(Guid id, CancellationToken ct) => Ok(await agents.KeysAsync(id, ct));
     [HttpPost("{id:guid}/keys"), Authorize(Policy = "ManageAgents")]

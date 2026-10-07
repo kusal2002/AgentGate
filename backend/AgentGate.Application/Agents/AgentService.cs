@@ -43,6 +43,13 @@ public sealed class AgentService(IAgentStore store, IAccountStore accounts, ICur
         agent.Status = AgentStatus.Disabled; agent.UpdatedAt = DateTimeOffset.UtcNow;
         await store.SaveAsync(ct);
     }
+    public async Task EnableAsync(Guid id, CancellationToken ct)
+    {
+        await RequireManager(ct);
+        var agent = await Find(id, ct);
+        agent.Status = AgentStatus.Active; agent.UpdatedAt = DateTimeOffset.UtcNow;
+        await store.SaveAsync(ct);
+    }
     public async Task<IReadOnlyList<ApiKeyDto>> KeysAsync(Guid agentId, CancellationToken ct)
     {
         await Find(agentId, ct);
@@ -53,9 +60,21 @@ public sealed class AgentService(IAgentStore store, IAccountStore accounts, ICur
         await RequireManager(ct);
         var agent = await Find(agentId, ct);
         if (agent.Status != AgentStatus.Active) throw new RequestException(409, "Disabled agents cannot receive new API keys.");
-        if (request.ExpiresAt <= DateTimeOffset.UtcNow) throw new RequestException(400, "Expiry must be in the future.");
+        var now = DateTimeOffset.UtcNow;
+        if (request.ExpiryPreset is not null && request.ExpiresAt is not null)
+            throw new RequestException(400, "Choose an expiry preset or a custom date, not both.");
+        var expiresAt = request.ExpiryPreset switch
+        {
+            null => request.ExpiresAt?.ToUniversalTime(),
+            "oneWeek" => now.AddDays(7),
+            "oneMonth" => now.AddMonths(1),
+            "sixMonths" => now.AddMonths(6),
+            "never" => (DateTimeOffset?)null,
+            _ => throw new RequestException(400, "Unknown expiry preset.")
+        };
+        if (expiresAt <= now) throw new RequestException(400, "Expiry must be in the future.");
         var key = AgentKeyCodec.Generate(agent.Environment);
-        var entity = new AgentApiKey { AgentId = agent.Id, OrganizationId = current.OrganizationId, Environment = agent.Environment, Name = request.Name.Trim(), KeyPrefix = key[..AgentKeyCodec.PrefixLength], KeyHash = AgentKeyCodec.Hash(key), ExpiresAt = request.ExpiresAt?.ToUniversalTime() };
+        var entity = new AgentApiKey { AgentId = agent.Id, OrganizationId = current.OrganizationId, Environment = agent.Environment, Name = request.Name.Trim(), KeyPrefix = key[..AgentKeyCodec.PrefixLength], KeyHash = AgentKeyCodec.Hash(key), ExpiresAt = expiresAt };
         store.Add(entity); await store.SaveAsync(ct);
         return new(key, MapKey(entity));
     }

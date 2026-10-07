@@ -10,7 +10,7 @@ public sealed record CreateAgentRequest(
     [Required(AllowEmptyStrings = true), StringLength(2000)] string Description = "");
 public sealed record UpdateAgentRequest([Required, StringLength(100)] string Name,
     [Required, StringLength(50)] string Version, [Required(AllowEmptyStrings = true), StringLength(2000)] string Description = "");
-public sealed record CreateKeyRequest([Required, StringLength(100)] string Name, DateTimeOffset? ExpiresAt = null);
+public sealed record CreateKeyRequest([Required, StringLength(100)] string Name, DateTimeOffset? ExpiresAt = null, string? ExpiryPreset = null);
 public sealed record AgentDto(Guid Id, Guid OrganizationId, string Name, string Slug, string Description,
     string Environment, string Status, string Version, DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt, DateTimeOffset? LastActivityAt);
 public sealed record ApiKeyDto(Guid Id, string Name, string KeyPrefix, string Environment, DateTimeOffset CreatedAt,
@@ -25,6 +25,7 @@ public interface IAgentService
     Task<AgentDto> CreateAsync(CreateAgentRequest request, CancellationToken ct);
     Task<AgentDto> UpdateAsync(Guid id, UpdateAgentRequest request, CancellationToken ct);
     Task DisableAsync(Guid id, CancellationToken ct);
+    Task EnableAsync(Guid id, CancellationToken ct);
     Task<IReadOnlyList<ApiKeyDto>> KeysAsync(Guid agentId, CancellationToken ct);
     Task<GeneratedKeyDto> GenerateKeyAsync(Guid agentId, CreateKeyRequest request, CancellationToken ct);
     Task RevokeKeyAsync(Guid agentId, Guid keyId, CancellationToken ct);

@@ -64,6 +64,11 @@ public sealed class AgentApiTests(AccountApiFactory factory) : IClassFixture<Acc
         Assert.Equal(HttpStatusCode.NoContent, (await client.PostAsync($"/api/agents/{id}/disable", null)).StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, (await agentClient.GetAsync("/v1/agents/me")).StatusCode);
         Assert.Equal(HttpStatusCode.Conflict, (await client.PostAsJsonAsync($"/api/agents/{id}/keys", new { name = "Invalid" })).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await client.PostAsync($"/api/agents/{id}/enable", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await client.PostAsync($"/api/agents/{id}/enable", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await agentClient.GetAsync("/v1/agents/me")).StatusCode);
+        Assert.Equal("Active", (await client.GetFromJsonAsync<JsonElement>($"/api/agents/{id}")).GetProperty("status").GetString());
+        await Generate(client, id);
     }
     [Theory]
     [InlineData("Development", "ag_test_")]
@@ -101,6 +106,7 @@ public sealed class AgentApiTests(AccountApiFactory factory) : IClassFixture<Acc
         Assert.Equal(HttpStatusCode.NotFound, (await b.GetAsync($"/api/agents/{aId}")).StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, (await b.GetAsync($"/api/agents/{aId}/keys")).StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, (await b.PostAsync($"/api/agents/{aId}/disable", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await b.PostAsync($"/api/agents/{aId}/enable", null)).StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, (await b.PatchAsJsonAsync($"/api/agents/{aId}", new { name = "Foreign", version = "1.0.0" })).StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, (await b.PostAsJsonAsync($"/api/agents/{aId}/keys", new { name = "Foreign" })).StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, (await b.PostAsync($"/api/agents/{bId}/keys/{keyId}/revoke", null)).StatusCode);
@@ -132,6 +138,7 @@ public sealed class AgentApiTests(AccountApiFactory factory) : IClassFixture<Acc
         Assert.Equal(canManage ? HttpStatusCode.Created : HttpStatusCode.Forbidden, (await client.PostAsJsonAsync($"/api/agents/{id}/keys", new { name = "Key" })).StatusCode);
         Assert.Equal(canManage ? HttpStatusCode.NoContent : HttpStatusCode.Forbidden, (await client.PostAsync($"/api/agents/{id}/keys/{keyId}/revoke", null)).StatusCode);
         Assert.Equal(canManage ? HttpStatusCode.NoContent : HttpStatusCode.Forbidden, (await client.PostAsync($"/api/agents/{id}/disable", null)).StatusCode);
+        Assert.Equal(canManage ? HttpStatusCode.NoContent : HttpStatusCode.Forbidden, (await client.PostAsync($"/api/agents/{id}/enable", null)).StatusCode);
     }
     [Fact]
     public async Task RevocationAndExpirationTakeEffectWithoutRestart()
@@ -148,6 +155,40 @@ public sealed class AgentApiTests(AccountApiFactory factory) : IClassFixture<Acc
         using var scope = factory.Services.CreateScope(); var db = scope.ServiceProvider.GetRequiredService<AgentGateDbContext>();
         await db.AgentApiKeys.Where(x => x.Id == anotherId).ExecuteUpdateAsync(set => set.SetProperty(x => x.ExpiresAt, DateTimeOffset.UtcNow.AddMinutes(-1)));
         Assert.Equal(HttpStatusCode.Unauthorized, (await AgentClient(another.GetProperty("key").GetString()!).GetAsync("/v1/agents/me")).StatusCode);
+        await client.PostAsync($"/api/agents/{id}/disable", null);
+        await client.PostAsync($"/api/agents/{id}/enable", null);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await agent.GetAsync("/v1/agents/me")).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await AgentClient(another.GetProperty("key").GetString()!).GetAsync("/v1/agents/me")).StatusCode);
+    }
+    [Theory]
+    [InlineData("oneWeek")]
+    [InlineData("oneMonth")]
+    [InlineData("sixMonths")]
+    [InlineData("never")]
+    public async Task ExpiryPresetsUseServerTimeAndPersistTheResult(string preset)
+    {
+        var (client, _, _) = await Register(); var id = (await Create(client)).GetProperty("id").GetGuid();
+        var before = DateTimeOffset.UtcNow;
+        var response = await client.PostAsJsonAsync($"/api/agents/{id}/keys", new { name = "Preset key", expiryPreset = preset });
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        var after = DateTimeOffset.UtcNow;
+        var key = (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("apiKey");
+        if (preset == "never") Assert.Equal(JsonValueKind.Null, key.GetProperty("expiresAt").ValueKind);
+        else
+        {
+            DateTimeOffset Expected(DateTimeOffset time) => preset == "oneWeek" ? time.AddDays(7) : time.AddMonths(preset == "oneMonth" ? 1 : 6);
+            Assert.InRange(key.GetProperty("expiresAt").GetDateTimeOffset(), Expected(before), Expected(after));
+        }
+        var stored = await client.GetFromJsonAsync<JsonElement>($"/api/agents/{id}/keys");
+        if (preset == "never") Assert.Equal(JsonValueKind.Null, stored[0].GetProperty("expiresAt").ValueKind);
+        else Assert.InRange((key.GetProperty("expiresAt").GetDateTimeOffset() - stored[0].GetProperty("expiresAt").GetDateTimeOffset()).Duration(), TimeSpan.Zero, TimeSpan.FromMicroseconds(1));
+    }
+    [Fact]
+    public async Task InvalidOrAmbiguousExpiryPresetIsRejected()
+    {
+        var (client, _, _) = await Register(); var id = (await Create(client)).GetProperty("id").GetGuid();
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsJsonAsync($"/api/agents/{id}/keys", new { name = "Invalid", expiryPreset = "unknown" })).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsJsonAsync($"/api/agents/{id}/keys", new { name = "Ambiguous", expiryPreset = "never", expiresAt = DateTimeOffset.UtcNow.AddDays(1) })).StatusCode);
     }
     [Fact]
     public async Task MalformedTamperedUnknownKeysAndSuspensionFailClosed()

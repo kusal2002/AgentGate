@@ -83,21 +83,27 @@ function AgentDetail({ id }: { id: string }) {
             <Badge variant="outline">v{data.version}</Badge>
           </div>
         </div>
-        {manager && data.status === "Active" && (
+        {manager && (
           <Button
             variant="outline"
-            className="text-destructive"
+            className={
+              data.status === "Active" ? "text-destructive" : "text-primary"
+            }
             disabled={update.isPending}
             onClick={() => {
               if (
                 window.confirm(
-                  "Disable this agent? All of its API keys will stop authenticating.",
+                  data.status === "Active"
+                    ? "Disable this agent? All of its API keys will stop authenticating."
+                    : "Enable this agent? Its unexpired, unrevoked API keys will work again.",
                 )
               )
-                update.mutate({ path: `/api/agents/${id}/disable` });
+                update.mutate({
+                  path: `/api/agents/${id}/${data.status === "Active" ? "disable" : "enable"}`,
+                });
             }}
           >
-            Disable agent
+            {data.status === "Active" ? "Disable agent" : "Enable agent"}
           </Button>
         )}
       </div>
@@ -212,6 +218,7 @@ function AgentKeys({ agent, manager }: { agent: Agent; manager: boolean }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [expiryPreset, setExpiryPreset] = useState("oneMonth");
   const keys = useQuery({
     queryKey: ["agent-keys", orgId, agent.id],
     queryFn: ({ signal }) =>
@@ -319,12 +326,15 @@ function AgentKeys({ agent, manager }: { agent: Agent; manager: boolean }) {
                     method: "POST",
                     body: JSON.stringify({
                       name: data.get("name"),
-                      expiresAt: expiry ? new Date(expiry).toISOString() : null,
+                      ...(expiryPreset === "custom"
+                        ? { expiresAt: new Date(expiry).toISOString() }
+                        : { expiryPreset }),
                     }),
                   },
                 );
                 setSecret(generated.key);
                 form.reset();
+                setExpiryPreset("oneMonth");
                 await refresh();
               } catch (cause) {
                 setError(
@@ -349,14 +359,32 @@ function AgentKeys({ agent, manager }: { agent: Agent; manager: boolean }) {
               />
             </label>
             <label className="text-sm" htmlFor="key-expiry">
-              Expiry (optional)
-              <Input
+              Expiry
+              <select
                 id="key-expiry"
-                name="expiresAt"
-                type="datetime-local"
-                className="mt-1.5"
-              />
+                value={expiryPreset}
+                onChange={(event) => setExpiryPreset(event.target.value)}
+                className="mt-1.5 flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+              >
+                <option value="oneWeek">Expires in 1 week</option>
+                <option value="oneMonth">Expires in 1 month</option>
+                <option value="sixMonths">Expires in 6 months</option>
+                <option value="never">No expiry</option>
+                <option value="custom">Custom date</option>
+              </select>
             </label>
+            {expiryPreset === "custom" && (
+              <label className="text-sm" htmlFor="key-custom-expiry">
+                Expiry date and time
+                <Input
+                  id="key-custom-expiry"
+                  name="expiresAt"
+                  type="datetime-local"
+                  className="mt-1.5"
+                  required
+                />
+              </label>
+            )}
             <Button disabled={busy}>
               {busy ? "Working…" : "Generate API key"}
             </Button>
@@ -393,7 +421,7 @@ function AgentKeys({ agent, manager }: { agent: Agent; manager: boolean }) {
                 </p>
                 <p className="mt-2 text-xs text-muted-foreground">
                   Created: {formatDate(key.createdAt)} · Expires:{" "}
-                  {formatDate(key.expiresAt)} · Last used:{" "}
+                  {formatDate(key.expiresAt, "No expiry")} · Last used:{" "}
                   {formatDate(key.lastUsedAt)}
                 </p>
               </div>
