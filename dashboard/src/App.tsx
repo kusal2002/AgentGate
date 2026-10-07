@@ -1,0 +1,29 @@
+import { NavLink, Route, Routes } from 'react-router-dom'
+import { Activity, BookOpen, Bot, ClipboardCheck, FileClock, LayoutDashboard, Settings, ShieldCheck, SlidersHorizontal } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { Overview } from '@/pages/overview'
+import { Placeholder } from '@/pages/placeholder'
+import { cn } from '@/lib/utils'
+
+const navigation = [
+  { path: '/', label: 'Overview', icon: LayoutDashboard },
+  { path: '/agents', label: 'Agents', icon: Bot },
+  { path: '/approvals', label: 'Approvals', icon: ClipboardCheck },
+  { path: '/policies', label: 'Policies', icon: SlidersHorizontal },
+  { path: '/audit-log', label: 'Audit log', icon: FileClock },
+  { path: '/settings', label: 'Settings', icon: Settings },
+]
+
+export default function App() {
+  return <div className="min-h-screen md:grid md:grid-cols-[230px_1fr]">
+    <aside className="flex flex-col border-b bg-white p-4 md:min-h-screen md:border-r md:border-b-0 md:p-5">
+      <NavLink to="/" className="mb-7 flex items-center gap-2 text-xl font-semibold tracking-tight"><span className="rounded-lg bg-primary p-1.5 text-white"><ShieldCheck className="size-5" /></span>AgentGate</NavLink>
+      <p className="mb-3 hidden px-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground md:block">Workspace</p>
+      <nav aria-label="Main navigation" className="flex flex-wrap gap-1 md:flex-col">{navigation.map(item => <NavLink key={item.path} to={item.path} end={item.path === '/'} className={({ isActive }) => cn('flex items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-colors', isActive ? 'bg-emerald-50 font-medium text-primary' : 'text-muted-foreground hover:bg-secondary hover:text-foreground')}><item.icon className="size-4" />{item.label}</NavLink>)}</nav>
+      <div className="mt-auto hidden pt-16 md:block"><div className="rounded-lg border bg-background p-3"><div className="flex items-center gap-2 text-xs font-medium"><BookOpen className="size-4 text-primary" />Local development</div><p className="mt-2 text-xs leading-relaxed text-muted-foreground">Setup instructions and architecture notes are in the repository README.</p></div></div>
+    </aside>
+    <div className="min-w-0"><header className="flex h-16 items-center justify-between border-b bg-white px-5 md:px-9"><div className="flex items-center gap-2 text-sm"><span className="size-2 rounded-full bg-primary" />Development workspace</div><Badge variant="outline"><Activity className="mr-1 size-3" />Foundation preview</Badge></header>
+      <main className="mx-auto max-w-6xl px-5 py-8 md:px-9 md:py-10"><Routes><Route path="/" element={<Overview />} />{navigation.slice(1).map(item => <Route key={item.path} path={item.path} element={<Placeholder title={item.label} />} />)}<Route path="*" element={<Placeholder title="Page" />} /></Routes><footer className="mt-10 flex flex-wrap items-center justify-between gap-2 border-t pt-4 text-xs text-muted-foreground"><span>AgentGate · The authorization layer for AI agents.</span><span>Phase 1 / Foundation</span></footer></main>
+    </div>
+  </div>
+}
