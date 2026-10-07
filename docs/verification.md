@@ -52,3 +52,5 @@ All 79 backend tests and the 25-test unit-only subset passed with zero build war
 Frontend production build and lint passed. The `20261007064441_PersistedAgentActions` migration was applied to the user's installed PostgreSQL without Docker. Existing data was preserved.
 
 Isolated Edge browser verification passed action list/filter/detail/reload, recent history per agent, one row on retry, 409 on changed payload, 413 for an oversized HTTP request, credential field display masking, desktop/mobile layout without horizontal overflow, empty browser credential storage, and no JavaScript runtime errors. Screenshots contain only synthetic data and masked credential fields. Browser services and their isolated database were removed after testing. Policy evaluation, approvals, external execution, and audit events remain future work.
+
+Windows follow-up: the test launcher now sends build outputs to ignored `.local-verification/backend-tests`, avoiding DLL locks from the running API. All 79 backend tests and 25 unit-only tests passed while the original API process stayed running; `/health/ready` remained healthy.

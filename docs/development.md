@@ -38,6 +38,7 @@ EF CLI does not load `.env` automatically. For direct EF commands, export databa
 - **Docker command missing:** use your installed PostgreSQL with the credentials and database name from `.env`, or install Docker Desktop and reopen your terminal.
 - **Database unavailable:** check `docker compose ps`, the database health check, credentials, port mapping, and `docker compose logs postgres`.
 - **API unavailable:** start the backend and check `http://localhost:5000/health` directly. Ensure port 5000 is free.
+- **Windows locked DLLs during build:** `scripts/test-backend.ps1` builds into ignored `.local-verification/backend-tests`, so tests can run while the API is open. For a direct `dotnet build` or migration that rebuilds the normal API output, stop the API with Ctrl+C first, then restart it afterward.
 - **Dashboard port in use:** stop the existing process or change Vite's port intentionally. It uses `strictPort` to avoid silently selecting a different port.
 - **Existing PostgreSQL volume:** its initialized password persists even after editing `.env`.
 - **Visual Studio:** open the root solution or `backend/AgentGate.sln`; both have the same project references.
