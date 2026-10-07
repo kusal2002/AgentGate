@@ -2,7 +2,7 @@
 
 Base URL: `http://localhost:5000`.
 
-Phase 2 authentication and organization endpoints are documented in [authentication.md](authentication.md). Protected routes require JWT authentication. Health and the existing Development prototype remain public.
+Authentication/organization endpoints are documented in [authentication.md](authentication.md). Agent management and API-key authentication are documented in [agents.md](agents.md). Management routes use human JWTs; agent identity and the Development prototype use agent keys. Health remains public.
 
 ## GET /health
 
@@ -30,7 +30,7 @@ HTTP 503 when PostgreSQL is unavailable; status and check status become `unhealt
 
 ## Existing Development-only refund prototype
 
-`POST /v1/actions/evaluate` preserves the original local prototype. There is no API key, persistence, approval request, or idempotency support. This route is absent outside Development.
+`POST /v1/actions/evaluate` preserves the original local prototype. It requires an active Development agent API key. There is no persistence, approval request, or idempotency support. This route is absent outside a Development host, and Staging/Production agent keys cannot call it.
 
 ```json
 {

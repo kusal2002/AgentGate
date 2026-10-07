@@ -3,6 +3,7 @@ using System;
 using AgentGate.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace AgentGate.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(AgentGateDbContext))]
-    partial class AgentGateDbContextModelSnapshot : ModelSnapshot
+    [Migration("20261007052258_AgentIdentityAndApiKeys")]
+    partial class AgentIdentityAndApiKeys
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

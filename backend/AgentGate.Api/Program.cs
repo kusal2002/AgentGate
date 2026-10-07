@@ -5,15 +5,16 @@ using AgentGate.Api.Authentication;
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddAccountAuthentication(builder.Configuration);
+builder.Services.AddAgentAuthentication();
 builder.Services.AddControllers();
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<AccountExceptionHandler>();
 var app = builder.Build();
 app.UseExceptionHandler();
 if (!app.Environment.IsDevelopment()) app.UseHttpsRedirection();
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseRateLimiter();
 app.MapControllers();
 
 app.MapGet("/health", () => Results.Ok(new
@@ -38,12 +39,15 @@ app.MapHealthChecks("/health/ready", new HealthCheckOptions
         }, context.RequestAborted)
 });
 
-// Preserve the existing prototype for local development only. It has no authentication
-// or persistence and must not be exposed as a production authorization gateway.
+// The original refund prototype now authenticates agents but still has no persistence.
+// It is available only in local Development and is not the production action gateway.
 if (app.Environment.IsDevelopment())
 {
     app.MapPost("/v1/actions/evaluate",
-        (ActionRequest request) => Evaluate(request));
+        (ActionRequest request, System.Security.Claims.ClaimsPrincipal user) =>
+            user.FindFirst("environment")?.Value == "Development" ? Evaluate(request) : Results.Forbid())
+        .RequireAuthorization("AgentIdentity")
+        .RequireRateLimiting("agent");
 }
 
 app.Run();

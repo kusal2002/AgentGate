@@ -62,6 +62,9 @@ public static class AuthSetup
             options.AddPolicy("auth", context => RateLimitPartition.GetFixedWindowLimiter(
                 context.Connection.RemoteIpAddress?.ToString() ?? "local",
                 _ => new FixedWindowRateLimiterOptions { PermitLimit = config.GetValue("Auth:PermitLimit", 30), Window = TimeSpan.FromMinutes(1), QueueLimit = 0, AutoReplenishment = true }));
+            options.AddPolicy("agent", context => RateLimitPartition.GetFixedWindowLimiter(
+                context.Connection.RemoteIpAddress?.ToString() ?? "local",
+                _ => new FixedWindowRateLimiterOptions { PermitLimit = config.GetValue("AgentAuth:PermitLimit", 120), Window = TimeSpan.FromMinutes(1), QueueLimit = 0, AutoReplenishment = true }));
         });
         return services;
     }

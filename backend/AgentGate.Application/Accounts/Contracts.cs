@@ -20,10 +20,8 @@ public sealed record MemberDto(Guid Id, Guid UserId, string Email, string Name, 
 public sealed record AccountDto(UserDto User, OrganizationDto Organization);
 public sealed record TokenDto(string AccessToken, DateTimeOffset ExpiresAt);
 public sealed record SessionResult(AccountDto Account, TokenDto Token, string RefreshToken, DateTimeOffset RefreshExpiresAt);
-public sealed class AccountException(int statusCode, string message) : Exception(message)
-{
-    public int StatusCode { get; } = statusCode;
-}
+public sealed class AccountException(int statusCode, string message)
+    : AgentGate.Application.Errors.RequestException(statusCode, message);
 public interface ICurrentAccount
 {
     Guid UserId { get; }

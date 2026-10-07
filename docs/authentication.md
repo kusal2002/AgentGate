@@ -1,6 +1,6 @@
 # Phase 2: organizations and authentication
 
-Phase 2 adds persisted users, organizations, memberships, sessions, registration/login, JWT access tokens, rotating refresh tokens, organization switching, and role management. Agent keys and action authorization are Phase 3 and beyond.
+Phase 2 adds persisted users, organizations, memberships, sessions, registration/login, JWT access tokens, rotating refresh tokens, organization switching, and role management. Phase 3 agent keys are now documented separately in [agents.md](agents.md); persisted action authorization remains later work.
 
 ## Start locally
 
@@ -40,11 +40,11 @@ Use Settings to rename the organization, add an already registered user, assign 
 | --- | --- |
 | Owner | View and rename organization; add members; assign Admin, Developer, Reviewer, Viewer |
 | Admin | View and rename organization; add/change Developer, Reviewer, Viewer members |
-| Developer | View organization and membership; later agent/key management |
+| Developer | View organization and membership; Phase 3 agent/key management |
 | Reviewer | View organization and membership; later approval review |
 | Viewer | View organization and membership |
 
-All users can create another organization and become its Owner. Roles are scoped to individual organizations. Owner membership cannot be changed through member endpoints. Admins cannot grant or change Admin/Owner roles. `ManageAgents` and `ReviewActions` authorization policies are defined for later phases, but their business endpoints are not implemented yet.
+All users can create another organization and become its Owner. Roles are scoped to individual organizations. Owner membership cannot be changed through member endpoints. Admins cannot grant or change Admin/Owner roles. `ManageAgents` protects the implemented Phase 3 endpoints; `ReviewActions` is reserved for the future approval system.
 
 ## API
 
@@ -72,6 +72,6 @@ Validation and application errors use Problem Details. Credentials and session f
 
 Run `./scripts/test-backend.ps1`. It uses `.env` database credentials or an explicit `AGENTGATE_TEST_CONNECTION`; the PostgreSQL role must be able to create databases. It creates a unique `agentgate_tests_*` database, runs the real EF migration, tests the HTTP API, and drops only that isolated database afterward. It does not reset or delete your AgentGate database.
 
-`./scripts/test-backend.ps1 -UnitOnly` runs role-rule tests without PostgreSQL. Frontend checks remain `npm --prefix dashboard run build` and `npm --prefix dashboard run lint`.
+`./scripts/test-backend.ps1 -UnitOnly` runs role and key-format tests without PostgreSQL. Frontend checks remain `npm --prefix dashboard run build` and `npm --prefix dashboard run lint`.
 
 Verified: 22 backend tests; registration validation and hashing; duplicate email normalization; JWT expiry, issuer, audience, and signature rejection; tenant isolation; all five roles; immediate role-change enforcement; lockout; CSRF header rejection; atomic concurrent refresh; replay rejection; revocation; organization switching; suspension and expiry; auth rate limits. Browser verification covers registration, login, logout, reload refresh, organization rename/create/switch, cookie protections, empty browser token storage, desktop/mobile layout, and no JavaScript runtime errors.
