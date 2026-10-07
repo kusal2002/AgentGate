@@ -269,7 +269,7 @@ function ApprovalDetailPage({ id }: { id: string }) {
                         {decision.decision === "approve"
                           ? "Approved"
                           : "Rejected"}{" "}
-                        by {decision.reviewerName}
+                        by {decision.reviewerName} via {decision.source === 'slack' ? 'Slack' : 'dashboard'}
                       </p>
                       <p className="mt-1 text-xs text-muted-foreground">
                         {formatDate(decision.createdAt)}

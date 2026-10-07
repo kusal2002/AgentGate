@@ -5,6 +5,7 @@ import { api, createOrganization, refreshAccount, type Role } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { SlackSettingsCard } from '@/pages/slack-settings'
 
 type Member = { id: string; userId: string; email: string; name: string; role: Role }
 const selectClass = 'h-10 rounded-md border bg-white px-3 text-sm focus-visible:outline-primary'
@@ -31,5 +32,6 @@ export function SettingsPage() {
       {manager && <form className="mt-5 flex flex-wrap items-end gap-3 border-t pt-5" onSubmit={event => { event.preventDefault(); const form = event.currentTarget; const data = Object.fromEntries(new FormData(form)); mutation.mutate({ path: '/api/organizations/current/members', body: data, method: 'POST' }, { onSuccess: () => form.reset() }) }}><label className="min-w-48 flex-1 text-sm" htmlFor="member-email">Add registered user<Input id="member-email" name="email" type="email" className="mt-1.5" placeholder="colleague@company.com" required /></label><label className="text-sm" htmlFor="new-role">Role<select id="new-role" name="role" className={`${selectClass} mt-1.5 block`} defaultValue="Viewer">{roles.map(role => <option key={role}>{role}</option>)}</select></label><Button disabled={mutation.isPending}>Add member</Button><p className="w-full text-xs text-muted-foreground">The user must create an account before you can add them.</p></form>}
     </CardContent></Card>
     <Card><CardHeader><CardTitle>Create another organization</CardTitle><CardDescription>You will become its owner and switch to the new workspace.</CardDescription></CardHeader><CardContent><form className="flex flex-wrap gap-3" onSubmit={async event => { event.preventDefault(); const name = String(new FormData(event.currentTarget).get('name')); setError(''); try { await createOrganization(name); setMessage('Organization created.') } catch (cause) { setError(cause instanceof Error ? cause.message : 'Could not create organization.') } }}><label className="min-w-48 flex-1 text-sm" htmlFor="new-org-name">New organization name<Input id="new-org-name" name="name" className="mt-1.5" maxLength={100} required /></label><Button className="self-end" variant="outline">Create organization</Button></form></CardContent></Card></div>
+    <div className="mt-6"><SlackSettingsCard key={organization.id} /></div>
   </>
 }

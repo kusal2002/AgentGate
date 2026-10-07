@@ -58,6 +58,15 @@ public static class DependencyInjection
         services.AddScoped<IApprovalService, ApprovalService>();
         services.AddSingleton(provider =>
         {
+            var config = provider.GetRequiredService<IConfiguration>();
+            return new AgentGate.Application.Slack.SlackSettings(config["SLACK_BOT_TOKEN"] ?? "", config["SLACK_SIGNING_SECRET"] ?? "",
+                config["SLACK_APP_ID"] ?? "", config["SLACK_TEAM_ID"] ?? "", Guid.TryParse(config["SLACK_ORGANIZATION_ID"], out var org) ? org : Guid.Empty);
+        });
+        services.AddHttpClient<AgentGate.Application.Slack.ISlackClient, AgentGate.Infrastructure.Slack.SlackClient>(http => http.Timeout = TimeSpan.FromSeconds(5))
+            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
+        services.AddScoped<AgentGate.Application.Slack.ISlackStore, AgentGate.Infrastructure.Slack.SlackStore>();
+        services.AddSingleton(provider =>
+        {
             var policyConfiguration = provider.GetRequiredService<IConfiguration>();
             ActionDecision Default(string environment, string fallback)
             {

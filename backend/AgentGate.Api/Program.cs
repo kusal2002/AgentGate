@@ -12,6 +12,8 @@ builder.Services.AddControllers();
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<AccountExceptionHandler>();
 builder.Services.AddHostedService<AgentGate.Api.Approvals.ApprovalExpiryWorker>();
+builder.Services.AddHostedService<AgentGate.Api.Slack.SlackWorker>();
+builder.Services.AddScoped<AgentGate.Api.Slack.SlackSignatureFilter>();
 var app = builder.Build();
 // Validate configured fallback decisions before accepting requests.
 app.Services.GetRequiredService<AgentGate.Application.Policies.PolicyDefaults>();

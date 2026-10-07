@@ -29,6 +29,7 @@ export type ApprovalDetail = {
     decision: string;
     comment: string;
     createdAt: string;
+    source: 'dashboard' | 'slack';
   }[];
 };
 export type ApprovalPage = {

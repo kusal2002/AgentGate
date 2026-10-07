@@ -87,4 +87,4 @@ npm --prefix dashboard run build
 npm --prefix dashboard run lint
 ```
 
-The full suite has 175 tests; unit-only has 82. The test script uses separate build outputs in ignored `.local-verification/backend-tests`, so you can leave the API running during tests on Windows. PostgreSQL tests create and remove isolated databases. Coverage includes concurrent identical and conflicting retries, canonical hashing, restart persistence, validation and limits, tenant/agent/scheme separation, all role reads, pagination/filtering, policy evaluation, and legacy test-result boundaries.
+The full suite has 207 tests; unit-only has 96. The test script uses separate build outputs in ignored `.local-verification/backend-tests`, so you can leave the API running during tests on Windows. PostgreSQL tests create and remove isolated databases. Coverage includes concurrent identical and conflicting retries, canonical hashing, restart persistence, validation and limits, tenant/agent/scheme separation, all role reads, pagination/filtering, policy evaluation, and legacy test-result boundaries.
