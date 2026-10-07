@@ -27,6 +27,9 @@ public sealed class PolicyStore(AgentGateDbContext db) : IPolicyStore
     public async Task SeedAsync(Guid organizationId, IReadOnlyList<Policy> policies, CancellationToken ct)
     {
         await using var transaction = await db.Database.BeginTransactionAsync(ct);
+        // Serialize sample seeding per tenant; otherwise EF's UUID-based insert ordering
+        // can deadlock concurrent batches on the unique seed-key index.
+        await db.Database.ExecuteSqlInterpolatedAsync($"SELECT \"Id\" FROM \"Organizations\" WHERE \"Id\" = {organizationId} FOR NO KEY UPDATE", ct);
         var existing = await db.Policies.Where(x => x.OrganizationId == organizationId && x.SeedKey != null).Select(x => x.SeedKey).ToListAsync(ct);
         var missing = policies.Where(x => !existing.Contains(x.SeedKey)).ToArray();
         db.Policies.AddRange(missing);

@@ -1,6 +1,6 @@
 # Phase 4: persisted action requests
 
-Phase 4 replaces the old `amountMinor` refund prototype with a generic, persisted action API. It adds validation, concurrent idempotency, agent-scoped retrieval, and tenant-scoped dashboard history. Phase 5 adds the policy engine; approvals, execution reporting, and append-only audit events belong to later phases.
+Phase 4 replaces the old `amountMinor` refund prototype with a generic, persisted action API. It adds validation, concurrent idempotency, agent-scoped retrieval, and tenant-scoped dashboard history. Phase 5 adds the policy engine and Phase 6 adds human approvals. Execution reporting and audit events belong to later phases.
 
 ## Setup
 
@@ -17,7 +17,7 @@ The migration adds `AgentActions`, a composite agent/organization foreign key, a
 
 Phase 5 now evaluates enabled organization policies. Requests return allow/approved, review/awaiting_approval, or deny/denied, with the matched rule, risk, reviewer, and reason. No-match defaults follow the agent environment: Development review, Staging/Production deny. See [policies.md](policies.md) for rule setup, configuration, and threshold tests.
 
-No external action is executed. Review requests have no approval ID until Phase 6. Historical Phase 4 test allow records remain visible in the dashboard, but agent replay/retrieval returns 403; submit with a new idempotency key for a real policy decision.
+No external action is executed. Review requests include an approval ID, status, and deadline. See [approvals.md](approvals.md) to approve, reject, or poll a request. Historical Phase 4 test allow records remain visible in the dashboard, but agent replay/retrieval returns 403; submit with a new idempotency key for a real policy decision.
 
 ## Submit and check a request
 
@@ -43,7 +43,7 @@ $first.actionId -eq $retry.actionId # True
 Invoke-RestMethod "http://localhost:5000/v1/actions/$($first.actionId)" -Headers $headers
 ```
 
-With the demo rules from [policies.md](policies.md) installed, expect review / awaiting_approval, testEvaluation false, the Medium refund policy, risk Medium, and reviewer Reviewer. Without a matching rule, a Development agent defaults to review with High risk and no matched policy. No approval ID exists yet.
+With the demo rules from [policies.md](policies.md) installed, expect review / awaiting_approval, testEvaluation false, the Medium refund policy, risk Medium, and reviewer Reviewer. Without a matching rule, a Development agent defaults to review with High risk and no matched policy. The response includes the pending approval ID and deadline; open **Approvals** to review it.
 
 Open **Actions** in the dashboard. There should be one row despite submitting twice. Filter by agent, open the action, check its resource/parameters/context and **Not executed** state, and reload. The agent detail page also shows its five most recent actions. History automatically refreshes every 30 seconds or with **Refresh actions**.
 
@@ -61,7 +61,7 @@ Change `amount` to 751 and submit with the same idempotency key: expect **409**,
 
 ## Idempotency
 
-Scope is `(OrganizationId, AgentId, IdempotencyKey)`, enforced in PostgreSQL. Identical retries return HTTP 200 and the original action ID/outcome, including simultaneous requests and retries after restarting the backend. Rotating an agent key does not change the scope. A key reused with different action/resource/parameters/context returns 409.
+Scope is `(OrganizationId, AgentId, IdempotencyKey)`, enforced in PostgreSQL. Identical retries return HTTP 200 and the original action ID and policy decision with the current approval/action status, including simultaneous requests and retries after restarting the backend. Rotating an agent key does not change the scope. A key reused with different action/resource/parameters/context returns 409.
 
 Request hashes are SHA-256 over canonical payloads. Object property ordering and insignificant numeric zeroes do not change identity; array order and actual values do. The first successful database insert wins a race; losing requests retrieve that row and compare its hash. No in-memory idempotency cache is used. This prevents duplicate request records; exactly-once external execution remains future work.
 
@@ -87,4 +87,4 @@ npm --prefix dashboard run build
 npm --prefix dashboard run lint
 ```
 
-The full suite has 140 tests; unit-only has 69. The test script uses separate build outputs in ignored `.local-verification/backend-tests`, so you can leave the API running during tests on Windows. PostgreSQL tests create and remove isolated databases. Coverage includes concurrent identical and conflicting retries, canonical hashing, restart persistence, validation and limits, tenant/agent/scheme separation, all role reads, pagination/filtering, policy evaluation, and legacy test-result boundaries.
+The full suite has 175 tests; unit-only has 82. The test script uses separate build outputs in ignored `.local-verification/backend-tests`, so you can leave the API running during tests on Windows. PostgreSQL tests create and remove isolated databases. Coverage includes concurrent identical and conflicting retries, canonical hashing, restart persistence, validation and limits, tenant/agent/scheme separation, all role reads, pagination/filtering, policy evaluation, and legacy test-result boundaries.

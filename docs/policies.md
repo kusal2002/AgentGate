@@ -1,6 +1,6 @@
 # Phase 5: deterministic policies
 
-Phase 5 replaces the temporary Development test evaluator with deterministic organization policies. Enabled rules return `allow`, `review`, or `deny`. No LLM participates in authorization. Decisions, matching policy ID/name, policy update timestamp, risk, reason, and reviewer role are saved with the action. Human approval requests and decisions are Phase 6; no external action is executed by this phase.
+Phase 5 replaces the temporary Development test evaluator with deterministic organization policies. Enabled rules return `allow`, `review`, or `deny`. No LLM participates in authorization. Decisions, matching policy ID/name, policy update timestamp, risk, reason, and reviewer role are saved with the action. Phase 6 now adds human approval requests and decisions; see [approvals.md](approvals.md). No external action is executed.
 
 ## Setup and manual checks
 
@@ -25,7 +25,7 @@ Stop the normal API before rebuilding/migrating on Windows. Tests use separate b
 | 15000 | deny | Critical | Extremely large refund |
 
 4. Open a policy, edit its conditions or priority, save, and test again. Disable/enable it from the list and confirm that new previews change. A stale edit returns 409 rather than overwriting another person's changes.
-5. Submit through the action API using the example in [actions.md](actions.md), **with a new idempotency key** such as `phase5-refund-750`. Expect `review`, `awaiting_approval`, a matching policy, `Medium` risk, and reviewer `Reviewer`. Open the resulting action in **Actions** and check the saved details. There is no approval ID or Approve button until Phase 6.
+5. Submit through the action API using the example in [actions.md](actions.md), **with a new idempotency key** such as `phase5-refund-750`. Expect `review`, `awaiting_approval`, a matching policy, `Medium` risk, and reviewer `Reviewer`. Open the resulting action in **Actions** and check the saved details. The response now includes an approval ID and deadline. Open **Approvals** to approve or reject as an eligible reviewer.
 6. Retry that exact request and confirm the same action/outcome. Edit the policy and retry again: the original stored result remains. A new idempotency key evaluates the current policy. Disabling a rule does not rewrite past actions.
 7. Verify a Developer can view/test policies but cannot create/edit/toggle them. Reviewer and Viewer can read definitions and action history, but cannot test or manage policies.
 
@@ -70,7 +70,7 @@ Only `Review` and `Deny` are accepted; invalid settings fail startup. A default 
 | Decision | Stored status | Meaning |
 | --- | --- | --- |
 | allow | approved | The rule permits the request; AgentGate has not executed it |
-| review | awaiting_approval | Hold the request; approval creation/resolution is Phase 6 |
+| review | awaiting_approval | Hold the request with a pending human approval |
 | deny | denied | Do not execute |
 
 New results have `testEvaluation: false`. Historical Phase 4 test allows remain visible in dashboard history, but agent retrieval/replay returns 403 after the policy engine is installed. Submit a new idempotency key for a real policy evaluation. Historical non-test denied/reviewed actions still replay their original results.
@@ -133,4 +133,4 @@ npm --prefix dashboard run build
 npm --prefix dashboard run lint
 ```
 
-The full suite has 140 tests and unit-only has 69. Coverage includes the ten operators, threshold boundaries, ordinal matching, nested fields, missing/null/type behavior, priority conflicts, defaults, role and tenant isolation, optimistic concurrency, concurrent seeding, preview/persisted agreement, production policy evaluation, stable historical snapshots/retries, and blocked legacy test allows. PostgreSQL integration tests create and drop isolated databases.
+The full suite has 175 tests and unit-only has 82. Coverage includes the ten operators, threshold boundaries, ordinal matching, nested fields, missing/null/type behavior, priority conflicts, defaults, role and tenant isolation, optimistic concurrency, concurrent seeding, preview/persisted agreement, production policy evaluation, stable historical snapshots/retries, and blocked legacy test allows. PostgreSQL integration tests create and drop isolated databases.

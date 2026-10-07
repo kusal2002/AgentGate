@@ -28,4 +28,5 @@ public sealed class AgentAction
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset? ExecutedAt { get; set; }
+    public AgentGate.Domain.Approvals.ApprovalRequest? Approval { get; set; }
 }

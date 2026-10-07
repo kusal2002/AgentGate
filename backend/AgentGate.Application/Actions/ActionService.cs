@@ -42,7 +42,8 @@ public sealed class ActionService(IActionStore store, ICurrentAgent current, IAc
             throw new RequestException(403, "Legacy test results cannot authorize policy-controlled actions. Submit with a new idempotency key.");
     }
     public static EvaluationDto Map(AgentAction action) => new(action.Id, action.Decision.ToString().ToLowerInvariant(), StatusName(action.Status), action.Reason, action.TestEvaluation,
-        action.MatchedPolicyId, action.MatchedPolicyName, action.ReviewerRole, action.RiskLevel?.ToString(), action.PolicyUpdatedAt);
+        action.MatchedPolicyId, action.MatchedPolicyName, action.ReviewerRole, action.RiskLevel?.ToString(), action.PolicyUpdatedAt,
+        action.Approval?.Id, action.Approval?.Status.ToString().ToLowerInvariant(), action.Approval?.ExpiresAt);
     public static string StatusName(ActionStatus status) => status == ActionStatus.AwaitingApproval ? "awaiting_approval" : status.ToString().ToLowerInvariant();
 }
 

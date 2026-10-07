@@ -12,10 +12,10 @@ Domain <- Application <- Infrastructure
 Dashboard -- Vite proxy --> API --> Infrastructure --> PostgreSQL
 ```
 
-- **Domain:** provider-independent account, agent, API-key, AgentAction, and Policy entities with role/status/environment/decision enums.
-- **Application:** references Domain; owns account, agent, action, and policy use cases, validation/canonical hashing, DTOs, persistence/password/token interfaces, API-key generation/verification, and deterministic policy matching/defaults.
-- **Infrastructure:** references Application; owns EF Core account/agent/action stores, atomic insert-or-retrieve idempotency, ASP.NET password hashing, Npgsql connection setup, and database readiness checks.
-- **API:** references Application and Infrastructure; owns thin controllers, separate JWT and agent-key authentication schemes, rate limits, cookie handling, HTTP account context, and Problem Details.
+- **Domain:** provider-independent account, agent, API-key, AgentAction, Policy, ApprovalRequest, and ApprovalDecision entities with role/status/environment/decision enums.
+- **Application:** references Domain; owns account, agent, action, policy, and approval use cases, validation/canonical hashing, DTOs, persistence/password/token interfaces, API-key generation/verification, deterministic policy matching/defaults, and reviewer permission rules.
+- **Infrastructure:** references Application; owns EF Core account/agent/action stores, atomic insert-or-retrieve idempotency, transactional approval resolution/expiry, ASP.NET password hashing, Npgsql connection setup, and database readiness checks.
+- **API:** references Application and Infrastructure; owns thin controllers, separate JWT and agent-key authentication schemes, rate limits, cookie handling, HTTP account context, Problem Details, and the approval expiry worker.
 - **Dashboard:** React Router handles navigation; TanStack Query handles server health state; Tailwind v4 and local shadcn/ui components handle styling.
 
 Membership and session records carry organization ownership. Current organization comes from the JWT's validated database session. Member lookup always combines the organization ID with the member ID. User-specific organization lists filter by the authenticated user. No organization IDs are hard-coded.
@@ -33,3 +33,9 @@ The root `.env` feeds optional Docker Compose, the PowerShell backend launcher, 
 ## Health semantics
 
 Liveness (`/health`) reports that the HTTP host is running. Readiness (`/health/ready`) opens a database connection through EF Core and does not create tables. The dashboard uses both so a database outage cannot masquerade as a working persistence layer.
+
+## Approval state transitions
+
+`HumanApprovals` links each approval to an action in the same tenant using a composite foreign key and unique index. Action and approval insertion share one EF transaction. Human resolution and deadline expiry lock the same approval row and update approval/action state in one transaction. The database clock defines the deadline; current membership defines reviewer eligibility. A unique decision index allows one winning human decision, and EF guards plus a PostgreSQL trigger prevent decision updates/deletes.
+
+The background worker expires batches every 30 seconds. Tenant-scoped reads also refresh due requests, and resolution checks expiry while holding the lock. Pending requests survive restarts. See [approvals.md](approvals.md) for roles, migration backfill, and timeout configuration.

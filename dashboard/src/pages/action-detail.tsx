@@ -21,6 +21,8 @@ export function ActionDetailRoute() {
     queryKey: ["action", session!.organization.id, id],
     queryFn: ({ signal }) =>
       api<ActionDetail>(`/api/actions/${id}`, { signal }),
+    refetchInterval: (query) =>
+      query.state.data?.status === "awaiting_approval" ? 5000 : false,
   });
   const data = action.data;
   return (
@@ -63,6 +65,24 @@ export function ActionDetailRoute() {
             </div>
           </div>
           <div className="grid gap-6">
+            {data.approvalId && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Human approval</CardTitle>
+                  <CardDescription>
+                    Approval status: {data.approvalStatus}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Link
+                    className="text-sm text-primary hover:underline"
+                    to={`/approvals/${data.approvalId}`}
+                  >
+                    Open approval request
+                  </Link>
+                </CardContent>
+              </Card>
+            )}
             <Card>
               <CardHeader>
                 <CardTitle>Evaluation outcome</CardTitle>

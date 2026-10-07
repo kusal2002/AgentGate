@@ -10,13 +10,15 @@ public sealed record ActionResource(string Type, string Id);
 public sealed record EvaluateActionRequest(string Action, ActionResource Resource, JsonElement Parameters,
     string IdempotencyKey, JsonElement Context = default);
 public sealed record EvaluationDto(Guid ActionId, string Decision, string Status, string Reason, bool TestEvaluation,
-    Guid? MatchedPolicyId, string? MatchedPolicyName, string? ReviewerRole, string? RiskLevel, DateTimeOffset? PolicyUpdatedAt);
+    Guid? MatchedPolicyId, string? MatchedPolicyName, string? ReviewerRole, string? RiskLevel, DateTimeOffset? PolicyUpdatedAt,
+    Guid? ApprovalId, string? ApprovalStatus, DateTimeOffset? ApprovalExpiresAt);
 public sealed record ActionSummaryDto(Guid Id, Guid AgentId, string AgentName, string Action, ActionResource Resource,
     string Decision, string Status, string? RiskLevel, DateTimeOffset CreatedAt, bool TestEvaluation);
 public sealed record ActionDetailDto(Guid Id, Guid AgentId, string AgentName, string Action, ActionResource Resource,
     string Decision, string Status, string? RiskLevel, DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt,
     DateTimeOffset? ExecutedAt, Guid? MatchedPolicyId, string IdempotencyKey, string Reason,
-    JsonElement Parameters, JsonElement Context, bool TestEvaluation, string? MatchedPolicyName, string? ReviewerRole, DateTimeOffset? PolicyUpdatedAt);
+    JsonElement Parameters, JsonElement Context, bool TestEvaluation, string? MatchedPolicyName, string? ReviewerRole, DateTimeOffset? PolicyUpdatedAt,
+    Guid? ApprovalId, string? ApprovalStatus);
 public sealed record ActionPageDto(IReadOnlyList<ActionSummaryDto> Items, int Total, int Page, int PageSize);
 public sealed record ActionEvaluation(ActionDecision Decision, ActionStatus Status, string Reason, bool TestEvaluation = false,
     Guid? MatchedPolicyId = null, string? MatchedPolicyName = null, string? ReviewerRole = null, ActionRiskLevel? RiskLevel = null, DateTimeOffset? PolicyUpdatedAt = null);
