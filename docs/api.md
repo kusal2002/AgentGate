@@ -1,6 +1,8 @@
-# Phase 1 API
+# API
 
 Base URL: `http://localhost:5000`.
+
+Phase 2 authentication and organization endpoints are documented in [authentication.md](authentication.md). Protected routes require JWT authentication. Health and the existing Development prototype remain public.
 
 ## GET /health
 

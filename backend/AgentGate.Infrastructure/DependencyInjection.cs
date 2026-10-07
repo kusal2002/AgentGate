@@ -3,6 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
+using AgentGate.Application.Accounts;
+using AgentGate.Infrastructure.Accounts;
 
 namespace AgentGate.Infrastructure;
 
@@ -27,6 +29,9 @@ public static class DependencyInjection
         }
 
         services.AddDbContext<AgentGateDbContext>(options => options.UseNpgsql(connectionString));
+        services.AddScoped<IAccountStore, AccountStore>();
+        services.AddSingleton<IPasswordService, PasswordService>();
+        services.AddScoped<AccountService>();
         services.AddHealthChecks().AddCheck<DatabaseHealthCheck>("postgresql", tags: ["ready"]);
         return services;
     }

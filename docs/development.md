@@ -9,6 +9,7 @@ dotnet build backend/AgentGate.sln
 npm --prefix dashboard ci
 npm --prefix dashboard run build
 npm --prefix dashboard run lint
+./scripts/test-backend.ps1
 ```
 
 Commit the npm lockfile. Use `npm ci` for reproducible installs. The shadcn configuration is `dashboard/components.json`; component source lives in `dashboard/src/components/ui`.
@@ -21,17 +22,16 @@ The pinned local `dotnet-ef` tool is recorded in `dotnet-tools.json`. From the r
 
 ```powershell
 dotnet tool restore
-dotnet ef migrations add InitialSchema --project backend/AgentGate.Infrastructure --startup-project backend/AgentGate.Api --output-dir Persistence/Migrations
+dotnet ef migrations add YourNextMigration --project backend/AgentGate.Infrastructure --startup-project backend/AgentGate.Api --output-dir Persistence/Migrations
 ```
 
-For database update, export database credentials first (or supply a full connection string through your process environment):
+For database update, use the launcher to import local database and JWT configuration:
 
 ```powershell
-$env:POSTGRES_PASSWORD = 'your local database password'
-dotnet ef database update --project backend/AgentGate.Infrastructure --startup-project backend/AgentGate.Api
+./scripts/start-backend.ps1 -MigrateOnly
 ```
 
-Use the other `POSTGRES_*` values if you changed the defaults. EF CLI does not load `.env` automatically. The startup project supplies configuration and dependency injection; the migration assembly is Infrastructure. Phase 1 has no entities and therefore no migration to apply.
+EF CLI does not load `.env` automatically. For direct EF commands, export database variables and `JWT_SECRET` into your process first. The startup project supplies configuration and dependency injection; the migration assembly is Infrastructure. The Phase 2 migration is `AccountsAndAuthentication`.
 
 ## Troubleshooting
 
@@ -44,4 +44,6 @@ Use the other `POSTGRES_*` values if you changed the defaults. EF CLI does not l
 
 ## Phase boundaries
 
-Phase 2 will add organizations, authentication, JWT, and roles. Critical authorization, tenant, race-condition, and idempotency tests belong with those implementations. No speculative business-rule tests are introduced for the Phase 1 scaffold.
+Phase 2 implements organizations, authentication, JWT, refresh rotation, and roles. `./scripts/test-backend.ps1` runs 22 critical role/authentication tests, including HTTP integration tests against an isolated PostgreSQL database. PostgreSQL must be running and the configured role must be able to create test databases. Use `-UnitOnly` for the role rules without a database. See [authentication.md](authentication.md).
+
+Phase 3 will add registered agents and hashed API keys. Policy evaluation, persisted actions, approvals, Slack, and audit history remain later phases.

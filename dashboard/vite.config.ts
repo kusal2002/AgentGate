@@ -18,7 +18,7 @@ export default defineConfig(({ mode }) => {
         '/api': {
           target: env.BACKEND_URL || 'http://localhost:5000',
           changeOrigin: true,
-          rewrite: path => path.replace(/^\/api/, ''),
+          rewrite: path => path.startsWith('/api/health') ? path.replace(/^\/api/, '') : path,
         },
       },
     },

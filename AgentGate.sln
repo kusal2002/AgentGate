@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgentGate.Application", "ba
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgentGate.Infrastructure", "backend\AgentGate.Infrastructure\AgentGate.Infrastructure.csproj", "{C34BEE16-C2F5-4AB3-B1DC-9A65B11AE0EB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgentGate.Tests", "backend\AgentGate.Tests\AgentGate.Tests.csproj", "{987A2B05-93F8-4D56-BBC3-480C1DE05C5A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -71,6 +73,18 @@ Global
 		{C34BEE16-C2F5-4AB3-B1DC-9A65B11AE0EB}.Release|x64.Build.0 = Release|Any CPU
 		{C34BEE16-C2F5-4AB3-B1DC-9A65B11AE0EB}.Release|x86.ActiveCfg = Release|Any CPU
 		{C34BEE16-C2F5-4AB3-B1DC-9A65B11AE0EB}.Release|x86.Build.0 = Release|Any CPU
+		{987A2B05-93F8-4D56-BBC3-480C1DE05C5A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{987A2B05-93F8-4D56-BBC3-480C1DE05C5A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{987A2B05-93F8-4D56-BBC3-480C1DE05C5A}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{987A2B05-93F8-4D56-BBC3-480C1DE05C5A}.Debug|x64.Build.0 = Debug|Any CPU
+		{987A2B05-93F8-4D56-BBC3-480C1DE05C5A}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{987A2B05-93F8-4D56-BBC3-480C1DE05C5A}.Debug|x86.Build.0 = Debug|Any CPU
+		{987A2B05-93F8-4D56-BBC3-480C1DE05C5A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{987A2B05-93F8-4D56-BBC3-480C1DE05C5A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{987A2B05-93F8-4D56-BBC3-480C1DE05C5A}.Release|x64.ActiveCfg = Release|Any CPU
+		{987A2B05-93F8-4D56-BBC3-480C1DE05C5A}.Release|x64.Build.0 = Release|Any CPU
+		{987A2B05-93F8-4D56-BBC3-480C1DE05C5A}.Release|x86.ActiveCfg = Release|Any CPU
+		{987A2B05-93F8-4D56-BBC3-480C1DE05C5A}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -80,5 +94,6 @@ Global
 		{87EF1B7F-3E7F-4151-BA13-32FFC51E0A65} = {1AE8ACA6-933B-BF2A-3671-3E2EAC007D16}
 		{D7FCC142-A341-4366-9540-52173665994C} = {1AE8ACA6-933B-BF2A-3671-3E2EAC007D16}
 		{C34BEE16-C2F5-4AB3-B1DC-9A65B11AE0EB} = {1AE8ACA6-933B-BF2A-3671-3E2EAC007D16}
+		{987A2B05-93F8-4D56-BBC3-480C1DE05C5A} = {1AE8ACA6-933B-BF2A-3671-3E2EAC007D16}
 	EndGlobalSection
 EndGlobal
