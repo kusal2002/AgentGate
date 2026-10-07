@@ -34,3 +34,13 @@ No authentication, persisted action, Slack, approval, SDK, or AI-agent acceptanc
 Backend build and all 22 tests passed, including isolated PostgreSQL HTTP integration tests. Frontend production build and lint with warnings treated as failures passed. The account migration was applied to the user's local `agentgate` database without Docker. A random JWT signing secret was configured in the ignored `.env`.
 
 Isolated Edge browser verification passed registration, login, sign out, refresh on reload, organization rename/create/switch, HttpOnly/SameSite cookie checks, empty browser token storage, and desktop/mobile rendering with no horizontal overflow or JavaScript runtime errors. Test databases are removed afterward. See [authentication.md](authentication.md) for the complete behavior and test commands.
+
+## Phase 3 verification (2026-10-07)
+
+All 44 backend tests passed with zero build warnings/errors. Frontend build and lint passed. The `AgentIdentityAndApiKeys` migration was applied to the user's installed PostgreSQL database without Docker.
+
+Agent coverage includes creation/list/detail/edit/disable, tenant isolation, all five roles, one-time key responses and hash-only storage, environment prefixes, malformed/tampered/unknown keys, JWT/key scheme separation, expiry, idempotent revocation, suspended organizations, immutable environments, last-use tracking, Development prototype authentication, and rate limiting before invalid-key authentication.
+
+Isolated Edge browser checks passed agent registration/edit, one-time key display/dismissal/reload, key authentication, revocation, disabling, Viewer restrictions, desktop/mobile layout, empty credential browser storage, and no runtime errors. Temporary browser data and services were removed after checks. See [agents.md](agents.md).
+
+Phase 3 follow-up: added server-calculated expiry presets (1 week, 1 month, 6 months, no expiry), retained custom dates, and added agent re-enabling. All 49 backend tests passed, including preset persistence/validation, enable role/tenant enforcement, resumed valid-key access, and continued rejection of revoked/expired keys after re-enabling. Frontend production build and lint passed. No database migration is required. The new UI controls were checked by build/lint; the earlier browser verification above predates these controls.

@@ -4,9 +4,9 @@
 
 ## Current milestone
 
-Phases 1 and 2 are implemented: the monorepo, .NET 10 Clean Architecture backend, PostgreSQL persistence, dashboard, registration/login, JWT and revocable refresh sessions, organizations, memberships, and five roles. Agent keys, policies, approvals, Slack, SDK, and the AI demo belong to later phases. See [authentication.md](docs/authentication.md) for the Phase 2 API and security behavior.
+Phases 1–3 are implemented: the monorepo, .NET 10 backend, PostgreSQL persistence, dashboard, registration/login, JWT and revocable refresh sessions, organizations, memberships, five roles, agent registration/management, and hashed API keys with expiry and revocation. Persisted actions, policies, approvals, Slack, SDK, and the AI demo belong to later phases. See [authentication.md](docs/authentication.md) and [agents.md](docs/agents.md) for the implemented APIs.
 
-The pre-existing, unauthenticated refund prototype remains available **only in Development** at `POST /v1/actions/evaluate`. It accepts `amountMinor` and is not the future persisted action API. Do not use it to authorize real actions.
+The original refund prototype remains available **only in a Development host and with an active Development agent key** at `POST /v1/actions/evaluate`. It accepts `amountMinor` and is not the future persisted action API. Do not use it to authorize real actions.
 
 ## Repository
 
@@ -86,7 +86,7 @@ npm run dev
 
 Open [the dashboard](http://localhost:5173) and create an account. The API listens at [localhost:5000](http://localhost:5000/health). Vite forwards `/api/*` to the backend, retaining the prefix for account APIs and stripping it for health endpoints. No CORS configuration is needed for local development. This proxy is a development feature; production hosting needs a same-origin HTTPS reverse proxy.
 
-The dashboard displays live service health and includes registration/login, organization selection, sign out, and Settings for organization names and member roles. Agents, Approvals, Policies, and Audit log remain placeholders.
+The dashboard displays live service health, registration/login, organization selection, organization Settings, and Agents screens for registration, editing, disabling, and one-time key generation/revocation. Approvals, Policies, and Audit log remain placeholders.
 
 ## Verify
 
@@ -101,7 +101,7 @@ Invoke-RestMethod http://localhost:5000/health/ready
 
 `/health` returns 200 while the API is running, independently of the database. `/health/ready` checks PostgreSQL and returns 200 if reachable or 503 otherwise. No credentials or exception details are returned to the browser.
 
-The `AccountsAndAuthentication` migration creates users, organizations, memberships, and hashed refresh sessions. Apply it with the `-MigrateOnly` command above. Migration tooling and the workflow are described in [development.md](docs/development.md).
+The migrations create users, organizations, memberships, hashed refresh sessions, agents, and hashed API keys. Apply them with the `-MigrateOnly` command above. Migration tooling and the workflow are described in [development.md](docs/development.md).
 
 Stop the database with `docker compose stop postgres`. Its data survives restart in the named volume. Changing `.env` does not change the password of an already initialized PostgreSQL volume; update the database role password or deliberately recreate the local volume.
 
@@ -113,5 +113,6 @@ Stop the database with `docker compose stop postgres`. Its data survives restart
 - [Slack setup roadmap](docs/slack-setup.md)
 - [Verification record](docs/verification.md)
 - [Organizations and authentication](docs/authentication.md)
+- [Agent identity and API keys](docs/agents.md)
 
 The demo refund workflow is planned for later phases. No Slack app, tokens, or AI provider integration is created by this milestone.

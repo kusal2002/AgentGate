@@ -5,6 +5,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 using AgentGate.Application.Accounts;
 using AgentGate.Infrastructure.Accounts;
+using AgentGate.Application.Agents;
+using AgentGate.Infrastructure.Agents;
 
 namespace AgentGate.Infrastructure;
 
@@ -32,6 +34,9 @@ public static class DependencyInjection
         services.AddScoped<IAccountStore, AccountStore>();
         services.AddSingleton<IPasswordService, PasswordService>();
         services.AddScoped<AccountService>();
+        services.AddScoped<IAgentStore, AgentStore>();
+        services.AddScoped<IAgentService, AgentService>();
+        services.AddScoped<IAgentKeyAuthenticator, AgentKeyAuthenticator>();
         services.AddHealthChecks().AddCheck<DatabaseHealthCheck>("postgresql", tags: ["ready"]);
         return services;
     }
