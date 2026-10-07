@@ -44,3 +44,13 @@ Agent coverage includes creation/list/detail/edit/disable, tenant isolation, all
 Isolated Edge browser checks passed agent registration/edit, one-time key display/dismissal/reload, key authentication, revocation, disabling, Viewer restrictions, desktop/mobile layout, empty credential browser storage, and no runtime errors. Temporary browser data and services were removed after checks. See [agents.md](agents.md).
 
 Phase 3 follow-up: added server-calculated expiry presets (1 week, 1 month, 6 months, no expiry), retained custom dates, and added agent re-enabling. All 49 backend tests passed, including preset persistence/validation, enable role/tenant enforcement, resumed valid-key access, and continued rejection of revoked/expired keys after re-enabling. Frontend production build and lint passed. No database migration is required. The new UI controls were checked by build/lint; the earlier browser verification above predates these controls.
+
+## Phase 4 verification (2026-10-07)
+
+All 79 backend tests and the 25-test unit-only subset passed with zero build warnings/errors. Coverage includes persisted action submission/retrieval, identical/concurrent/conflicting retries, canonical payload hashing, persistence across new hosts, tenant and agent isolation, authentication scheme separation, all five history roles, validation/size/depth/precision rules, pagination/filtering, Development test allow, non-Development deny, and blocking replay of test results in Production. See [actions.md](actions.md) for test commands and the manual checklist.
+
+Frontend production build and lint passed. The `20261007064441_PersistedAgentActions` migration was applied to the user's installed PostgreSQL without Docker. Existing data was preserved.
+
+Isolated Edge browser verification passed action list/filter/detail/reload, recent history per agent, one row on retry, 409 on changed payload, 413 for an oversized HTTP request, credential field display masking, desktop/mobile layout without horizontal overflow, empty browser credential storage, and no JavaScript runtime errors. Screenshots contain only synthetic data and masked credential fields. Browser services and their isolated database were removed after testing. Policy evaluation, approvals, external execution, and audit events remain future work.
+
+Windows follow-up: the test launcher now sends build outputs to ignored `.local-verification/backend-tests`, avoiding DLL locks from the running API. All 79 backend tests and 25 unit-only tests passed while the original API process stayed running; `/health/ready` remained healthy.

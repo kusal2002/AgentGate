@@ -16,6 +16,8 @@ if (-not $UnitOnly -and -not $env:AGENTGATE_TEST_CONNECTION) {
     $env:AGENTGATE_TEST_CONNECTION = $connection.ConnectionString
 }
 $testProject = Join-Path $projectRoot 'backend/AgentGate.Tests'
-if ($UnitOnly) { dotnet test $testProject -m:1 --filter 'FullyQualifiedName~RoleRulesTests|FullyQualifiedName~AgentKeyCodecTests' }
-else { dotnet test $testProject -m:1 }
+# Separate test build outputs from the running API's DLLs, which Windows locks.
+$testArtifacts = Join-Path $projectRoot '.local-verification/backend-tests'
+if ($UnitOnly) { dotnet test $testProject -m:1 --artifacts-path $testArtifacts --filter 'FullyQualifiedName~RoleRulesTests|FullyQualifiedName~AgentKeyCodecTests|FullyQualifiedName~ActionPayloadTests' }
+else { dotnet test $testProject -m:1 --artifacts-path $testArtifacts }
 exit $LASTEXITCODE

@@ -1,11 +1,14 @@
 using AgentGate.Infrastructure;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using AgentGate.Api.Authentication;
+using AgentGate.Application.Actions;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddAccountAuthentication(builder.Configuration);
 builder.Services.AddAgentAuthentication();
+builder.Services.AddScoped<ICurrentAgent, CurrentAgent>();
+builder.Services.AddSingleton<IActionEvaluator>(new DevelopmentActionEvaluator(builder.Environment.IsDevelopment()));
 builder.Services.AddControllers();
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<AccountExceptionHandler>();
@@ -39,90 +42,6 @@ app.MapHealthChecks("/health/ready", new HealthCheckOptions
         }, context.RequestAborted)
 });
 
-// The original refund prototype now authenticates agents but still has no persistence.
-// It is available only in local Development and is not the production action gateway.
-if (app.Environment.IsDevelopment())
-{
-    app.MapPost("/v1/actions/evaluate",
-        (ActionRequest request, System.Security.Claims.ClaimsPrincipal user) =>
-            user.FindFirst("environment")?.Value == "Development" ? Evaluate(request) : Results.Forbid())
-        .RequireAuthorization("AgentIdentity")
-        .RequireRateLimiting("agent");
-}
-
 app.Run();
-
-static IResult Evaluate(ActionRequest request)
-{
-    if (string.IsNullOrWhiteSpace(request.Action)
-        || request.Parameters is null
-        || request.Parameters.AmountMinor is null
-        || request.Parameters.AmountMinor <= 0
-        || string.IsNullOrWhiteSpace(request.Parameters.Currency))
-    {
-        return Results.BadRequest(new
-        {
-            error = "Provide action, a positive amountMinor, and currency."
-        });
-    }
-
-    // This first demo supports USD refunds only.
-    if (request.Action != "refund"
-        || request.Parameters.Currency != "USD")
-    {
-        return Results.Ok(new
-        {
-            decision = "DENY",
-            reason = "No policy permits this action or currency."
-        });
-    }
-
-    long amount = request.Parameters.AmountMinor.Value;
-
-    var result = amount switch
-    {
-        <= 10_000 => (
-            Decision: "ALLOW",
-            ReviewerRole: (string?)null,
-            Reason: "Refund is within the automatic approval limit."
-        ),
-
-        <= 100_000 => (
-            Decision: "REVIEW",
-            ReviewerRole: (string?)"support_manager",
-            Reason: "Refund requires Support Manager approval."
-        ),
-
-        <= 500_000 => (
-            Decision: "REVIEW",
-            ReviewerRole: (string?)"finance_manager",
-            Reason: "Refund requires Finance Manager approval."
-        ),
-
-        _ => (
-            Decision: "DENY",
-            ReviewerRole: (string?)null,
-            Reason: "Refund exceeds the permitted limit."
-        )
-    };
-
-    return Results.Ok(new
-    {
-        decision = result.Decision,
-        reviewerRole = result.ReviewerRole,
-        reason = result.Reason,
-        policyVersion = "refund-demo-v1"
-    });
-}
-
-public record ActionRequest(
-    string? Action,
-    ActionParameters? Parameters
-);
-
-public record ActionParameters(
-    long? AmountMinor,
-    string? Currency
-);
 
 public partial class Program;

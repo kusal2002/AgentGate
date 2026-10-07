@@ -204,7 +204,7 @@ public sealed class AgentApiTests(AccountApiFactory factory) : IClassFixture<Acc
         Assert.Equal(HttpStatusCode.Unauthorized, (await AgentClient(raw).GetAsync("/v1/agents/me")).StatusCode);
     }
     [Fact]
-    public async Task InputsAreValidatedAndDevelopmentPrototypeRequiresDevelopmentAgent()
+    public async Task InputsAreValidatedAndActionTestAllowRequiresDevelopmentAgent()
     {
         var (client, _, _) = await Register();
         foreach (var environment in new[] { "invalid", "0", "development" })
@@ -212,12 +212,14 @@ public sealed class AgentApiTests(AccountApiFactory factory) : IClassFixture<Acc
         Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsJsonAsync("/api/agents", new { name = " ", environment = "Development", version = "1" })).StatusCode);
         var devId = (await Create(client)).GetProperty("id").GetGuid();
         var prodId = (await Create(client, "Production")).GetProperty("id").GetGuid();
-        var request = new { action = "refund", parameters = new { amountMinor = 75000, currency = "USD" } };
+        var request = new { action = "refund", resource = new { type = "customer", id = "CUS-102" }, parameters = new { amount = 750, currency = "USD" }, idempotencyKey = "test-refund" };
         Assert.Equal(HttpStatusCode.Unauthorized, (await client.PostAsJsonAsync("/v1/actions/evaluate", request)).StatusCode);
         var dev = AgentClient((await Generate(client, devId)).GetProperty("key").GetString()!);
         Assert.Equal(HttpStatusCode.OK, (await dev.PostAsJsonAsync("/v1/actions/evaluate", request)).StatusCode);
         var prod = AgentClient((await Generate(client, prodId)).GetProperty("key").GetString()!);
-        Assert.Equal(HttpStatusCode.Forbidden, (await prod.PostAsJsonAsync("/v1/actions/evaluate", request)).StatusCode);
+        var denied = await prod.PostAsJsonAsync("/v1/actions/evaluate", request);
+        Assert.Equal(HttpStatusCode.OK, denied.StatusCode);
+        Assert.Equal("deny", (await denied.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("decision").GetString());
     }
     [Fact]
     public async Task AgentRateLimitAppliesBeforeInvalidKeyAuthentication()
