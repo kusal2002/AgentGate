@@ -4,7 +4,7 @@
 
 ## Current milestone
 
-Phases 1–7 are implemented: the foundation, authentication/organizations, agent identity and secure API keys, persisted action requests with idempotency/history, deterministic policies with management and testing screens, and human approvals with transactional decisions and expiry, plus Slack notifications and approval buttons. Audit events, SDK, and the AI demo belong to later phases. See [authentication.md](docs/authentication.md), [agents.md](docs/agents.md), [actions.md](docs/actions.md), and [policies.md](docs/policies.md) for the implemented APIs. Human approval APIs and the current manual checklist are in [approvals.md](docs/approvals.md).
+Phases 1–10 are implemented: foundation, authentication/organizations, agent identity and secure API keys, persisted actions with idempotency/history, deterministic policies, human approvals and expiry, Slack approvals, append-only audit events, the completed dashboard, and the server-side TypeScript SDK. The SDK requests authorization and polls approval outcomes; external actions are not executed. See [SDK setup and Phase 10 checks](docs/sdk.md). The demo agent remains Phase 11.
 
 `POST /v1/actions/evaluate` persists the specification's request and evaluates enabled organization policies, recording allow/review/deny, the matched rule, risk, reviewer role, and reason. With no match, Development agents default to review and Staging/Production to deny. Phase 4's temporary test allow is removed; historical test results cannot authorize policy-controlled work. No external action is executed. Review outcomes create one pending approval atomically with the action. Authorized humans can approve or reject; agents poll the result. See [Phase 6 manual checks](docs/approvals.md).
 
@@ -19,7 +19,7 @@ backend/
   AgentGate.Infrastructure/  EF Core context, Npgsql, database health
   AgentGate.Tests/           Role rules and PostgreSQL HTTP integration tests
 dashboard/                  React + TypeScript + Vite
-sdk/typescript/             Reserved for Phase 10
+sdk/typescript/             Server-side @agentgate/sdk package
 examples/refund-agent/      Reserved for Phase 11
 docker/                     Container setup notes
 docs/                       Architecture, API, and development docs
@@ -95,6 +95,7 @@ dotnet build backend/AgentGate.sln
 npm --prefix dashboard run build
 npm --prefix dashboard run lint
 ./scripts/test-backend.ps1
+./scripts/test-sdk.ps1
 Invoke-RestMethod http://localhost:5000/health
 Invoke-RestMethod http://localhost:5000/health/ready
 ```
@@ -119,5 +120,6 @@ Stop the database with `docker compose stop postgres`. Its data survives restart
 - [Human approvals and Phase 6 checks](docs/approvals.md)
 - [Audit log and Phase 8 checks](docs/audit.md)
 - [Dashboard and Phase 9 checks](docs/dashboard.md)
+- [TypeScript SDK and Phase 10 checks](docs/sdk.md)
 
 The demo refund workflow is planned for later phases. Connect your existing Slack app using [Phase 7 setup and live checks](docs/slack-setup.md). No AI provider integration is required.
