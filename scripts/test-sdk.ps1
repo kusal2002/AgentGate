@@ -45,7 +45,9 @@ try {
     $env:ConnectionStrings__AgentGate = $connection.ConnectionString
     $env:POSTGRES_DB = $database
     $secretBytes = New-Object byte[] 48
-    [System.Security.Cryptography.RandomNumberGenerator]::Fill($secretBytes)
+    # GetBytes also works in Windows PowerShell 5.1's .NET Framework runtime.
+    $random = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+    try { $random.GetBytes($secretBytes) } finally { $random.Dispose() }
     $env:JWT_SECRET = [Convert]::ToBase64String($secretBytes)
     # Disable every live Slack credential/configuration in the child API.
     foreach ($name in @('SLACK_BOT_TOKEN','SLACK_SIGNING_SECRET','SLACK_APP_ID','SLACK_TEAM_ID','SLACK_ORGANIZATION_ID')) { [Environment]::SetEnvironmentVariable($name, '', 'Process') }
