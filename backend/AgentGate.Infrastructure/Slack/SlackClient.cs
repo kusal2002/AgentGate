@@ -8,17 +8,17 @@ namespace AgentGate.Infrastructure.Slack;
 
 public sealed class SlackClient(HttpClient http, SlackSettings settings) : ISlackClient
 {
-    private async Task<JsonElement> Call(string method, object body, CancellationToken ct)
+    private async Task<JsonElement> Call(string method, object? body, CancellationToken ct, bool get = false)
     {
-        try { return await CallCore(method, body, ct); }
+        try { return await CallCore(method, body, ct, get); }
         catch (Exception ex) when (ex is HttpRequestException or JsonException or TaskCanceledException)
         { ct.ThrowIfCancellationRequested(); throw new SlackApiException(); }
     }
-    private async Task<JsonElement> CallCore(string method, object body, CancellationToken ct)
+    private async Task<JsonElement> CallCore(string method, object? body, CancellationToken ct, bool get)
     {
-        using var request = new HttpRequestMessage(HttpMethod.Post, "https://slack.com/api/" + method);
+        using var request = new HttpRequestMessage(get ? HttpMethod.Get : HttpMethod.Post, "https://slack.com/api/" + method);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", settings.BotToken);
-        request.Content = JsonContent.Create(body);
+        if (body is not null) request.Content = JsonContent.Create(body);
         using var response = await http.SendAsync(request, ct);
         if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
             throw new SlackApiException((int)Math.Clamp(response.Headers.RetryAfter?.Delta?.TotalSeconds ?? 60, 1, 3600));
@@ -36,7 +36,7 @@ public sealed class SlackClient(HttpClient http, SlackSettings settings) : ISlac
     }
     public async Task VerifyReviewerAsync(string userId, CancellationToken ct)
     {
-        var result = await Call("users.info", new { user = userId }, ct); var user = result.GetProperty("user");
+        var result = await Call("users.info?user=" + Uri.EscapeDataString(userId), null, ct, get: true); var user = result.GetProperty("user");
         if (user.GetProperty("id").GetString() != userId || user.GetProperty("team_id").GetString() != settings.TeamId
             || user.GetProperty("deleted").GetBoolean() || user.GetProperty("is_bot").GetBoolean() || userId == "USLACKBOT")
             throw new RequestException(400, "Choose an active human member of the configured Slack workspace.");
