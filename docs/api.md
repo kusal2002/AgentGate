@@ -49,3 +49,9 @@ Human JWTs read `GET /api/integrations/slack`. Owner/Admin can `PUT /api/integra
 ## Audit history
 
 Human JWTs read `GET /api/audit`, `GET /api/audit/{id}`, `GET /api/actions/{id}/timeline`, and `GET /api/approvals/{id}/timeline`. All roles can read their current organization's history; agent API keys cannot. List results support agent/action/approval IDs, event type, actor type, inclusive date bounds, and pagination. Timelines are oldest first and lists newest first. Audit endpoints do not accept writes. See [audit.md](audit.md) for the contract, redaction, migration snapshots, integrity boundaries, and manual checks.
+
+Phase 9 adds `GET /api/audit/options` for recorded action types and reviewers, and `actionType`, `decision`, `riskLevel`, `reviewerId`, and exact identifier `search` filters to the list. Friendly names and related action context are read-only response additions; original event metadata is unchanged. See [dashboard.md](dashboard.md) for definitions and search behavior.
+
+## Dashboard statistics
+
+Human JWTs read organization overview statistics and ten recent requests at `GET /api/dashboard`, and per-agent totals at `GET /api/agents/{id}/statistics`. Every organization role can read; agent keys cannot. These routes use no-store responses and derive tenant identity from the validated session. Statistics exclude legacy prototype test results and policy previews, preserve the original policy decision when a reviewer resolves a request, and count executed actions separately from approvals. No new migration or configuration is required. See [dashboard.md](dashboard.md).

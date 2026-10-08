@@ -254,7 +254,7 @@ export function PolicyTestPage() {
                   {result.decision === "review" && (
                     <p className="rounded-md bg-amber-50 p-3 text-sm">
                       This action would wait for approval. Human approval
-                      handling comes in Phase 6.
+                      requests are created for real evaluations, not previews.
                     </p>
                   )}
                 </div>

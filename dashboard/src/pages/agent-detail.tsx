@@ -5,6 +5,7 @@ import { ArrowLeft, Copy, KeyRound } from "lucide-react";
 import { useAuth } from "@/auth/auth-provider";
 import { api } from "@/lib/api";
 import { RecentAgentActions } from "@/pages/actions";
+import { AgentStatistics } from "@/components/agent-statistics";
 import {
   formatDate,
   type Agent,
@@ -118,7 +119,8 @@ function AgentDetail({ id }: { id: string }) {
           {update.error.message}
         </p>
       )}
-      <div className="grid gap-6">
+      <div className="grid min-w-0 grid-cols-1 gap-6">
+        <AgentStatistics agentId={data.id} />
         <Card>
           <CardHeader>
             <CardTitle>Agent details</CardTitle>

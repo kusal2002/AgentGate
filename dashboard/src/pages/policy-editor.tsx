@@ -380,8 +380,8 @@ function PolicyEditor({ initial }: { initial?: Policy }) {
               <CardHeader>
                 <CardTitle>Then return</CardTitle>
                 <CardDescription>
-                  Review holds the action for human approval. Approval handling
-                  comes in Phase 6.
+                  Review requires a human decision through Approvals or a
+                  configured Slack channel.
                 </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-4 sm:grid-cols-3">

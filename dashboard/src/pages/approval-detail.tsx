@@ -45,7 +45,7 @@ function ApprovalDetailPage({ id }: { id: string }) {
     onSuccess: async (value) => {
       queryClient.setQueryData(["approval", orgId, id], value);
       setComment("");
-      for (const key of ["approvals", "actions", "action", "recent-actions", "audit-timeline", "audit"])
+      for (const key of ["approvals", "actions", "action", "recent-actions", "audit-timeline", "audit", "audit-options", "dashboard", "agent-statistics"])
         await queryClient.invalidateQueries({ queryKey: [key, orgId] });
     },
     onError: () => {

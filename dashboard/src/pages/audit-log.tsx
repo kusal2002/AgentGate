@@ -7,6 +7,7 @@ import {
   eventLabel,
   type AuditEvent,
   type AuditPage,
+  type AuditOptions,
 } from "@/lib/audit";
 import { AuditEventRow } from "@/components/audit-timeline";
 import { Button } from "@/components/ui/button";
@@ -18,12 +19,17 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import type { Agent } from "@/lib/agents";
+import { Input } from "@/components/ui/input";
 
 export function AuditLogPage() {
   const { session } = useAuth();
   const [search, setSearch] = useSearchParams();
   const org = session!.organization.id;
-  const page = Math.max(1, Number(search.get("page")) || 1);
+  const rawPage = Number(search.get("page") || 1);
+  const page =
+    Number.isInteger(rawPage) && rawPage >= 1 && rawPage <= 1_000_000
+      ? rawPage
+      : 1;
   const query = new URLSearchParams(search);
   query.set("page", String(page));
   query.set("pageSize", "25");
@@ -34,6 +40,12 @@ export function AuditLogPage() {
   const agents = useQuery({
     queryKey: ["agents", org],
     queryFn: ({ signal }) => api<Agent[]>("/api/agents", { signal }),
+  });
+  const options = useQuery({
+    queryKey: ["audit-options", org],
+    queryFn: ({ signal }) =>
+      api<AuditOptions>("/api/audit/options", { signal }),
+    staleTime: 30_000,
   });
   function change(key: string, value: string) {
     const next = new URLSearchParams(search);
@@ -77,7 +89,94 @@ export function AuditLogPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          <form
+            key={search.get("search") || ""}
+            className="mb-5 flex flex-wrap items-end gap-3"
+            onSubmit={(event) => {
+              event.preventDefault();
+              const value = String(
+                new FormData(event.currentTarget).get("search") || "",
+              ).trim();
+              change("search", value);
+            }}
+          >
+            <label
+              className="min-w-0 flex-1 text-xs text-muted-foreground"
+              htmlFor="audit-search"
+            >
+              Search IDs
+              <Input
+                id="audit-search"
+                name="search"
+                className="mt-1"
+                defaultValue={search.get("search") || ""}
+                placeholder="Action, agent, approval, event, or customer ID"
+                maxLength={200}
+              />
+            </label>
+            <Button variant="outline" type="submit">
+              Search
+            </Button>
+          </form>
           <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <label className="text-xs text-muted-foreground">
+              Action
+              <select
+                aria-label="Action"
+                className={selectClass}
+                value={search.get("actionType") || ""}
+                onChange={(e) => change("actionType", e.target.value)}
+              >
+                <option value="">All actions</option>
+                {options.data?.actions.map((type) => (
+                  <option key={type}>{type}</option>
+                ))}
+              </select>
+            </label>
+            <label className="text-xs text-muted-foreground">
+              Decision
+              <select
+                aria-label="Decision"
+                className={selectClass}
+                value={search.get("decision") || ""}
+                onChange={(e) => change("decision", e.target.value)}
+              >
+                <option value="">All decisions</option>
+                {["allow", "review", "deny"].map((type) => (
+                  <option key={type}>{type}</option>
+                ))}
+              </select>
+            </label>
+            <label className="text-xs text-muted-foreground">
+              Risk
+              <select
+                aria-label="Risk"
+                className={selectClass}
+                value={search.get("riskLevel") || ""}
+                onChange={(e) => change("riskLevel", e.target.value)}
+              >
+                <option value="">All risk levels</option>
+                {["Low", "Medium", "High", "Critical"].map((type) => (
+                  <option key={type}>{type}</option>
+                ))}
+              </select>
+            </label>
+            <label className="text-xs text-muted-foreground">
+              Reviewer
+              <select
+                aria-label="Reviewer"
+                className={selectClass}
+                value={search.get("reviewerId") || ""}
+                onChange={(e) => change("reviewerId", e.target.value)}
+              >
+                <option value="">All reviewers</option>
+                {options.data?.reviewers.map((person) => (
+                  <option key={person.id} value={person.id}>
+                    {person.name}
+                  </option>
+                ))}
+              </select>
+            </label>
             <label className="text-xs text-muted-foreground">
               Agent
               <select
@@ -160,8 +259,31 @@ export function AuditLogPage() {
           </div>
           {events.isPending && <p role="status">Loading audit events…</p>}
           {events.error && (
-            <p role="alert" className="text-sm text-destructive">
-              {events.error.message}
+            <div role="alert" className="text-sm text-destructive">
+              <p>{events.error.message}</p>
+              <Button
+                className="mt-2"
+                size="sm"
+                variant="outline"
+                onClick={() => void events.refetch()}
+              >
+                Retry events
+              </Button>
+            </div>
+          )}
+          {(options.error || agents.error) && (
+            <p role="alert" className="mb-3 text-sm text-destructive">
+              Some filter options could not be loaded.{" "}
+              {options.error?.message || agents.error?.message}{" "}
+              <button
+                className="underline"
+                onClick={() => {
+                  void options.refetch();
+                  void agents.refetch();
+                }}
+              >
+                Retry filters
+              </button>
             </p>
           )}
           {events.data && (
@@ -248,6 +370,24 @@ export function AuditEventRoute() {
                 <AuditEventRow event={detail.data} />
               </ol>
               <dl className="mt-5 space-y-3 text-xs">
+                {detail.data.actorId && (
+                  <div>
+                    <dt className="text-muted-foreground">Actor ID</dt>
+                    <dd className="break-all font-mono">
+                      {detail.data.actorId}
+                    </dd>
+                  </div>
+                )}
+                {detail.data.reviewerId && (
+                  <div>
+                    <dt className="text-muted-foreground">
+                      Related action reviewer
+                    </dt>
+                    <dd className="break-all">
+                      {detail.data.reviewerName || detail.data.reviewerId}
+                    </dd>
+                  </div>
+                )}
                 <div>
                   <dt className="text-muted-foreground">Organization</dt>
                   <dd className="break-all font-mono">

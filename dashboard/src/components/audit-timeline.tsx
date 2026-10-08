@@ -26,14 +26,40 @@ export function AuditEventRow({ event }: { event: AuditEvent }) {
           {eventLabel(event.eventType)}
         </Link>
         <Badge variant="secondary">{event.actorType}</Badge>
+        {event.actorName && (
+          <span className="text-xs text-muted-foreground">
+            {event.actorName}
+          </span>
+        )}
       </div>
       <p className="mt-1 text-xs text-muted-foreground">
         {formatDate(event.createdAt)}
       </p>
-      {event.actorId && (
+      {event.actorId && !event.actorName && (
         <p className="mt-1 break-all font-mono text-xs text-muted-foreground">
           Actor: {event.actorId}
         </p>
+      )}
+      {(event.agentName || event.actionType || event.resourceId) && (
+        <p className="mt-2 break-words text-xs text-muted-foreground">
+          {[
+            event.agentName,
+            event.actionType,
+            event.resourceId
+              ? `${event.resourceType} / ${event.resourceId}`
+              : null,
+          ]
+            .filter(Boolean)
+            .join(" · ")}
+        </p>
+      )}
+      {(event.decision || event.riskLevel) && (
+        <div className="mt-2 flex flex-wrap gap-2">
+          {event.decision && <Badge variant="outline">{event.decision}</Badge>}
+          {event.riskLevel && (
+            <Badge variant="outline">{event.riskLevel}</Badge>
+          )}
+        </div>
       )}
       {event.actionId && (
         <Link

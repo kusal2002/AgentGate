@@ -12,6 +12,8 @@ public sealed class AuditController(AuditService audit) : ControllerBase
     public async Task<IActionResult> List([FromQuery] AuditFilter filter, CancellationToken ct) => Ok(await audit.ListAsync(filter, ct));
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> Get(Guid id, CancellationToken ct) => Ok(await audit.GetAsync(id, ct));
+    [HttpGet("options")]
+    public async Task<IActionResult> Options(CancellationToken ct) => Ok(await audit.OptionsAsync(ct));
     [HttpGet("/api/actions/{id:guid}/timeline")]
     public async Task<IActionResult> Action(Guid id, int page = 1, int pageSize = 25, CancellationToken ct = default) => Ok(await audit.TimelineAsync(id, false, page, pageSize, ct));
     [HttpGet("/api/approvals/{id:guid}/timeline")]
