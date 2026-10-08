@@ -147,7 +147,7 @@ export function ActionsPage() {
           Refresh actions
         </Button>
       </div>
-      <p className="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm">
+      <p className="mb-6 rounded-lg border bg-white p-4 text-sm text-muted-foreground">
         Policies determine allow, review, or deny. Human
         approval requests can now be resolved from Approvals. Approval does not execute an action.
       </p>

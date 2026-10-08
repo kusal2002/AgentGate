@@ -10,12 +10,25 @@ export type AuditEvent = {
   metadata: Record<string, unknown>;
   ipAddress: string | null;
   createdAt: string;
+  agentName: string | null;
+  actionType: string | null;
+  resourceType: string | null;
+  resourceId: string | null;
+  decision: string | null;
+  riskLevel: string | null;
+  reviewerId: string | null;
+  reviewerName: string | null;
+  actorName: string | null;
 };
 export type AuditPage = {
   items: AuditEvent[];
   total: number;
   page: number;
   pageSize: number;
+};
+export type AuditOptions = {
+  actions: string[];
+  reviewers: { id: string; name: string }[];
 };
 export const auditTypes = [
   "agent.action_requested",

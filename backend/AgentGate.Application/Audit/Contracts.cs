@@ -16,9 +16,14 @@ public interface IAuditWriter
     void Management(Guid organizationId, string eventType, object metadata, Guid? agentId = null);
 }
 public sealed record AuditFilter(Guid? AgentId = null, Guid? ActionId = null, Guid? ApprovalRequestId = null,
-    string? EventType = null, string? ActorType = null, DateTimeOffset? From = null, DateTimeOffset? To = null, int Page = 1, int PageSize = 25);
+    string? EventType = null, string? ActorType = null, DateTimeOffset? From = null, DateTimeOffset? To = null, int Page = 1, int PageSize = 25,
+    string? ActionType = null, string? Decision = null, Guid? ReviewerId = null, string? RiskLevel = null, string? Search = null);
 public sealed record AuditEventDto(Guid Id, Guid OrganizationId, Guid? AgentId, Guid? ActionId, Guid? ApprovalRequestId,
-    string EventType, string ActorType, Guid? ActorId, JsonElement Metadata, string? IPAddress, DateTimeOffset CreatedAt);
+    string EventType, string ActorType, Guid? ActorId, JsonElement Metadata, string? IPAddress, DateTimeOffset CreatedAt,
+    string? AgentName = null, string? ActionType = null, string? ResourceType = null, string? ResourceId = null,
+    string? Decision = null, string? RiskLevel = null, Guid? ReviewerId = null, string? ReviewerName = null, string? ActorName = null);
+public sealed record AuditReviewerDto(Guid Id, string Name);
+public sealed record AuditOptionsDto(IReadOnlyList<string> Actions, IReadOnlyList<AuditReviewerDto> Reviewers);
 public sealed record AuditPageDto(IReadOnlyList<AuditEventDto> Items, int Total, int Page, int PageSize);
 public interface IAuditStore
 {
@@ -26,4 +31,5 @@ public interface IAuditStore
     Task<AuditEventDto?> GetAsync(Guid org, Guid id, CancellationToken ct);
     Task<bool> ActionExistsAsync(Guid org, Guid id, CancellationToken ct);
     Task<Guid?> ApprovalActionAsync(Guid org, Guid id, CancellationToken ct);
+    Task<AuditOptionsDto> OptionsAsync(Guid org, CancellationToken ct);
 }

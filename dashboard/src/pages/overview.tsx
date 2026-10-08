@@ -1,36 +1,352 @@
-import { useQuery } from '@tanstack/react-query'
-import { ArrowRight, Check, RefreshCw } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { cn } from '@/lib/utils'
-import { getHealth } from '@/lib/health'
+import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import {
+  ArrowRight,
+  RefreshCw,
+  ClipboardCheck,
+  Bot,
+  SlidersHorizontal,
+} from "lucide-react";
+import { useAuth } from "@/auth/auth-provider";
+import { useDashboard, formatDuration } from "@/lib/dashboard";
+import { formatDate } from "@/lib/agents";
+import { getHealth } from "@/lib/health";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 export function Overview() {
-  const api = useQuery({ queryKey: ['health'], queryFn: ({ signal }) => getHealth('/health', signal), retry: false, refetchInterval: 30_000 })
-  const database = useQuery({ queryKey: ['readiness'], queryFn: ({ signal }) => getHealth('/health/ready', signal), retry: false, refetchInterval: 30_000 })
-  const apiHealthy = api.data?.status === 'ok' && !api.isError
-  const databaseHealthy = database.data?.status === 'healthy' && !database.isError
-  const checking = api.isFetching || database.isFetching
-  const services = [
-    { title: 'API service', state: api.isPending ? 'Checking' : apiHealthy ? 'Online' : 'Unavailable', detail: apiHealthy ? 'AgentGate is responding.' : 'Start the backend on port 5000.', good: apiHealthy },
-    { title: 'PostgreSQL', state: database.isPending ? 'Checking' : databaseHealthy ? 'Connected' : 'Unavailable', detail: databaseHealthy ? 'Database readiness check passed.' : 'Start PostgreSQL and configure its credentials.', good: databaseHealthy },
-    { title: 'Dashboard', state: 'Online', detail: 'React workspace is running.', good: true },
-  ]
-
-  return <>
-    <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
-      <div><p className="mb-2 text-xs font-semibold uppercase tracking-widest text-primary">Workspace overview</p><h1 className="text-3xl font-semibold tracking-tight">Your agents. Your rules.</h1><p className="mt-2 text-sm text-muted-foreground">Control what your AI agents can do, with approval and accountability.</p></div>
-      <Button variant="outline" disabled={checking} onClick={() => { void api.refetch(); void database.refetch() }}><RefreshCw className={cn('size-4', checking && 'animate-spin')} />Refresh status</Button>
-    </div>
-    <Card className="mb-6 border-primary/20 bg-gradient-to-br from-white to-emerald-50/60">
-      <CardHeader><div className="flex items-center gap-2"><Badge variant="secondary">Phase 8</Badge><span className="text-xs text-muted-foreground">Audit system</span></div><CardTitle className="mt-3 text-xl">Follow every authorization decision</CardTitle><CardDescription className="max-w-2xl leading-relaxed">Review the append-only audit log and action timelines, including policy outcomes, human decisions, and Slack deliveries. Earlier requests have clearly marked migration snapshots.</CardDescription></CardHeader>
-      <CardContent><div className="flex flex-wrap items-center gap-3 text-sm"><span className="rounded-md border bg-white px-3 py-2">Agent request</span><ArrowRight className="size-4 text-muted-foreground" /><span className="rounded-md border border-primary/30 bg-white px-3 py-2 font-medium text-primary">AgentGate</span><ArrowRight className="size-4 text-muted-foreground" /><div className="flex gap-2"><Badge className="bg-emerald-100 text-emerald-800">Allow</Badge><Badge className="bg-amber-100 text-amber-800">Review</Badge><Badge className="bg-red-100 text-red-800">Deny</Badge></div></div><p className="mt-4 text-xs text-muted-foreground">Policies and human reviews now govern agent requests. Approval does not execute an action.</p></CardContent>
-    </Card>
-    <div className="mb-6 grid gap-4 md:grid-cols-3">{services.map(item => <Card key={item.title}><CardHeader className="pb-2"><CardDescription>{item.title}</CardDescription><CardTitle className="flex items-center gap-2 text-xl"><span className={cn('size-2 rounded-full', item.good ? 'bg-emerald-600' : 'bg-amber-600')} />{item.state}</CardTitle></CardHeader><CardContent className="text-xs text-muted-foreground">{item.detail}</CardContent></Card>)}</div>
-    <div className="grid gap-6 lg:grid-cols-2">
-      <Card><CardHeader><CardTitle>Development checklist</CardTitle><CardDescription>The building blocks of this workspace.</CardDescription></CardHeader><CardContent className="space-y-4">{['Organizations, authentication, and five roles', 'Agent registration and management', 'Hashed API keys with expiry and revocation', 'Slack notifications and reviewer decisions', 'Append-only audit log and action timelines'].map(label => <div key={label} className="flex items-center gap-3 text-sm"><span className="rounded-full bg-emerald-50 p-1 text-primary"><Check className="size-3" /></span>{label}</div>)}</CardContent></Card>
-      <Card><CardHeader><CardTitle>What comes next</CardTitle><CardDescription>Build the authorization layer one phase at a time.</CardDescription></CardHeader><CardContent className="space-y-4">{[{ step: '09', title: 'Dashboard completion', detail: 'Bring the remaining workspace views together.' }].map(item => <div key={item.step} className="flex gap-3"><span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-secondary font-mono text-xs">{item.step}</span><div><p className="text-sm font-medium">{item.title}</p><p className="mt-1 text-xs text-muted-foreground">{item.detail}</p></div></div>)}</CardContent></Card>
-    </div>
-  </>
+  const { session } = useAuth();
+  const dashboard = useDashboard();
+  const data = dashboard.data;
+  const api = useQuery({
+    queryKey: ["health"],
+    queryFn: ({ signal }) => getHealth("/health", signal),
+    retry: false,
+    refetchInterval: 30_000,
+  });
+  const database = useQuery({
+    queryKey: ["readiness"],
+    queryFn: ({ signal }) => getHealth("/health/ready", signal),
+    retry: false,
+    refetchInterval: 30_000,
+  });
+  const stats = data?.statistics;
+  const cards = [
+    {
+      label: "Actions evaluated",
+      value: stats?.actionsEvaluated,
+      detail: "Policy evaluations",
+      path: "/actions",
+    },
+    {
+      label: "Auto allowed",
+      value: stats?.autoAllowed,
+      detail: "Allowed by policy",
+      path: "/audit-log?decision=allow",
+    },
+    {
+      label: "Human reviews",
+      value: stats?.humanReviews,
+      detail: "Requests requiring review",
+      path: "/approvals?status=all",
+    },
+    {
+      label: "Denied",
+      value: stats?.denied,
+      detail: "Denied by policy",
+      path: "/audit-log?decision=deny",
+    },
+    {
+      label: "Pending approvals",
+      value: stats?.pendingApprovals,
+      detail: "Waiting for a reviewer",
+      path: "/approvals?status=pending",
+    },
+    {
+      label: "Average approval time",
+      value: stats ? formatDuration(stats.averageApprovalSeconds) : undefined,
+      detail: "Approved and rejected requests",
+      path: "/approvals?status=all",
+    },
+  ];
+  return (
+    <>
+      <div className="mb-7 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-primary">
+            Workspace overview
+          </p>
+          <h1 className="text-3xl font-semibold tracking-tight">
+            Your workspace at a glance
+          </h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Authorization activity for {session!.organization.name}.
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          disabled={dashboard.isFetching}
+          onClick={() => {
+            void dashboard.refetch();
+            void api.refetch();
+            void database.refetch();
+          }}
+        >
+          <RefreshCw className="size-4" />
+          Refresh overview
+        </Button>
+      </div>
+      {dashboard.isPending && (
+        <p role="status" className="mb-5 text-sm text-muted-foreground">
+          Loading workspace activity…
+        </p>
+      )}
+      {dashboard.error && (
+        <div
+          role="alert"
+          className="mb-5 rounded-lg border border-red-200 bg-red-50 p-4 text-sm"
+        >
+          <p>
+            {dashboard.error.message}{" "}
+            {data && "Showing the last successful snapshot."}
+          </p>
+          <Button
+            className="mt-2"
+            variant="outline"
+            size="sm"
+            onClick={() => void dashboard.refetch()}
+          >
+            Retry overview
+          </Button>
+        </div>
+      )}
+      <div className="mb-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {cards.map((card) => (
+          <Link
+            key={card.label}
+            to={card.path}
+            className="rounded-xl focus-visible:outline-2 focus-visible:outline-primary"
+          >
+            <Card className="h-full transition-colors hover:border-primary/40">
+              <CardHeader className="pb-0">
+                <CardDescription>{card.label}</CardDescription>
+                <CardTitle
+                  className="text-3xl tabular-nums"
+                  role="heading"
+                  aria-level={2}
+                >
+                  {card.value === undefined
+                    ? "—"
+                    : typeof card.value === "number"
+                      ? card.value.toLocaleString()
+                      : card.value}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="text-xs text-muted-foreground">
+                {card.detail}
+              </CardContent>
+            </Card>
+          </Link>
+        ))}
+      </div>
+      <p className="mb-7 text-xs text-muted-foreground">
+        All time · Approval authorizes an action; completed execution is tracked
+        separately.{data && <> Updated {formatDate(data.asOf)}.</>}
+      </p>
+      {data && (
+        <div className="mb-7 grid gap-4 sm:grid-cols-3">
+          {[
+            {
+              icon: Bot,
+              label: "Agents",
+              value: `${data.activeAgents} active / ${data.totalAgents} total`,
+              path: "/agents",
+            },
+            {
+              icon: SlidersHorizontal,
+              label: "Policies",
+              value: `${data.enabledPolicies} enabled`,
+              path: "/policies",
+            },
+            {
+              icon: ClipboardCheck,
+              label: "Review queue",
+              value: `${stats!.pendingApprovals} pending`,
+              path: "/approvals?status=pending",
+            },
+          ].map((item) => (
+            <Link
+              key={item.label}
+              to={item.path}
+              className="flex items-center gap-3 rounded-lg border bg-white p-4 text-sm hover:border-primary/40"
+            >
+              <item.icon className="size-5 shrink-0 text-primary" />
+              <div>
+                <p className="font-medium">{item.label}</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {item.value}
+                </p>
+              </div>
+              <ArrowRight className="ml-auto size-4 text-muted-foreground" />
+            </Link>
+          ))}
+        </div>
+      )}
+      <Card>
+        <CardHeader>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <CardTitle role="heading" aria-level={2}>
+                Recent activity
+              </CardTitle>
+              <CardDescription className="mt-2">
+                The latest ten evaluated requests, with their current outcomes.
+              </CardDescription>
+            </div>
+            <Link
+              to="/actions"
+              className="text-sm text-primary hover:underline"
+            >
+              View all actions
+            </Link>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {dashboard.isPending && (
+            <p role="status" className="text-sm">
+              Loading recent requests…
+            </p>
+          )}
+          {data?.recentActivity.length === 0 && (
+            <div className="py-8 text-center">
+              <Bot className="mx-auto mb-3 size-8 text-primary" />
+              <h2 className="text-lg font-medium">No evaluated requests yet</h2>
+              <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
+                Register an agent, issue an API key, and submit its first action
+                request to see activity here.
+              </p>
+              <div className="mt-4 flex flex-wrap justify-center gap-4">
+                <Link to="/agents" className="text-sm text-primary underline">
+                  {["Owner", "Admin", "Developer"].includes(
+                    session!.organization.role,
+                  )
+                    ? "Manage agents"
+                    : "View agents"}
+                </Link>
+                <Link to="/policies" className="text-sm text-primary underline">
+                  View policies
+                </Link>
+              </div>
+            </div>
+          )}
+          {!!data?.recentActivity.length && (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead className="border-b text-xs text-muted-foreground">
+                  <tr>
+                    {[
+                      "Time",
+                      "Agent",
+                      "Action / resource",
+                      "Decision",
+                      "Status",
+                      "Risk",
+                      "Reviewer",
+                    ].map((label) => (
+                      <th key={label} className="px-3 py-3 font-medium">
+                        {label}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {data!.recentActivity.map((item) => (
+                    <tr key={item.id}>
+                      <td className="whitespace-nowrap px-3 py-4 text-xs">
+                        {formatDate(item.createdAt)}
+                      </td>
+                      <td className="px-3 py-4">
+                        <Link
+                          to={`/agents/${item.agentId}`}
+                          className="text-primary hover:underline"
+                        >
+                          {item.agentName}
+                        </Link>
+                      </td>
+                      <td className="max-w-60 break-words px-3 py-4">
+                        <Link
+                          to={`/actions/${item.id}`}
+                          className="font-medium text-primary hover:underline"
+                        >
+                          {item.action}
+                        </Link>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {item.resource.type} · {item.resource.id}
+                        </p>
+                      </td>
+                      <td className="px-3 py-4">
+                        <Badge variant="outline">{item.decision}</Badge>
+                      </td>
+                      <td className="px-3 py-4">
+                        {item.approvalId ? (
+                          <Link
+                            className="text-primary hover:underline"
+                            to={`/approvals/${item.approvalId}`}
+                          >
+                            {item.status.replaceAll("_", " ")}
+                          </Link>
+                        ) : (
+                          item.status.replaceAll("_", " ")
+                        )}
+                      </td>
+                      <td className="px-3 py-4 text-xs">
+                        {item.riskLevel || "—"}
+                      </td>
+                      <td className="px-3 py-4 text-xs">
+                        {item.reviewerName ||
+                          (item.reviewerId ? item.reviewerId : "—")}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          {!data && dashboard.error && (
+            <p className="text-sm text-muted-foreground">
+              Recent activity is unavailable. Retry the overview to load it.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+      <div
+        className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 rounded-lg border bg-white px-4 py-3 text-xs text-muted-foreground"
+        aria-label="Service health"
+      >
+        <span>
+          API:{" "}
+          {api.isPending
+            ? "Checking"
+            : api.data?.status === "ok" && !api.isError
+              ? "Online"
+              : "Unavailable"}
+        </span>
+        <span>
+          PostgreSQL:{" "}
+          {database.isPending
+            ? "Checking"
+            : database.data?.status === "healthy" && !database.isError
+              ? "Connected"
+              : "Unavailable"}
+        </span>
+      </div>
+    </>
+  );
 }

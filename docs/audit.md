@@ -49,7 +49,7 @@ npm --prefix dashboard run lint
 | GET | `/api/actions/{id}/timeline` | Action events, oldest first |
 | GET | `/api/approvals/{id}/timeline` | The approval’s full action timeline, oldest first |
 
-List filters: `agentId`, `actionId`, `approvalRequestId`, `eventType`, `actorType`, `from`, `to`, `page`, `pageSize`. Actor types are `Agent`, `User`, `Policy`, `System`, and `Slack`. Date bounds are inclusive ISO timestamps with offsets. Page defaults to 1 and size to 25; size is limited to 100. Timeline endpoints accept `page` and `pageSize`. Every result is scoped to the authenticated organization and uses `no-store` responses.
+List filters: `agentId`, `actionId`, `approvalRequestId`, `eventType`, `actorType`, `from`, `to`, `page`, `pageSize`. Phase 9 additionally supports `actionType`, `decision`, `riskLevel`, `reviewerId`, and exact identifier `search`, with lookup options at `/api/audit/options`; see [dashboard.md](dashboard.md). Actor types are `Agent`, `User`, `Policy`, `System`, and `Slack`. Date bounds are inclusive ISO timestamps with offsets. Page defaults to 1 and size to 25; size is limited to 100. Timeline endpoints accept `page` and `pageSize`. Every result is scoped to the authenticated organization and uses `no-store` responses.
 
 ## Integrity and boundaries
 

@@ -87,8 +87,8 @@ export function PoliciesPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="text-sm text-muted-foreground">
-          Review outcomes wait for human approval. The approval workflow is
-          coming in Phase 6.
+          Review outcomes create a human approval request. Reviewers can respond
+          in Approvals or through a configured Slack channel.
         </CardContent>
       </Card>
       {change.error && (

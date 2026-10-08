@@ -42,6 +42,8 @@ public static class DependencyInjection
         services.AddScoped<AgentGate.Application.Audit.IAuditWriter, AgentGate.Infrastructure.Audit.AuditWriter>();
         services.AddScoped<AgentGate.Application.Audit.IAuditStore, AgentGate.Infrastructure.Audit.AuditStore>();
         services.AddScoped<AgentGate.Application.Audit.AuditService>();
+        services.AddScoped<AgentGate.Application.Dashboard.IDashboardStore, AgentGate.Infrastructure.Dashboard.DashboardStore>();
+        services.AddScoped<AgentGate.Application.Dashboard.DashboardService>();
         services.AddScoped<IAccountStore, AccountStore>();
         services.AddSingleton<IPasswordService, PasswordService>();
         services.AddScoped<AccountService>();
