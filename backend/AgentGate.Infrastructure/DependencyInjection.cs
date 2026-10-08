@@ -38,6 +38,10 @@ public static class DependencyInjection
         }
 
         services.AddDbContext<AgentGateDbContext>(options => options.UseNpgsql(connectionString));
+        services.AddSingleton<AgentGate.Application.Audit.ISensitiveDataRedactor, AgentGate.Application.Audit.SensitiveDataRedactor>();
+        services.AddScoped<AgentGate.Application.Audit.IAuditWriter, AgentGate.Infrastructure.Audit.AuditWriter>();
+        services.AddScoped<AgentGate.Application.Audit.IAuditStore, AgentGate.Infrastructure.Audit.AuditStore>();
+        services.AddScoped<AgentGate.Application.Audit.AuditService>();
         services.AddScoped<IAccountStore, AccountStore>();
         services.AddSingleton<IPasswordService, PasswordService>();
         services.AddScoped<AccountService>();

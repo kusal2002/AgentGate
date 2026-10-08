@@ -1,3 +1,4 @@
+import { AuditTimeline } from '@/components/audit-timeline';
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -44,7 +45,7 @@ function ApprovalDetailPage({ id }: { id: string }) {
     onSuccess: async (value) => {
       queryClient.setQueryData(["approval", orgId, id], value);
       setComment("");
-      for (const key of ["approvals", "actions", "action", "recent-actions"])
+      for (const key of ["approvals", "actions", "action", "recent-actions", "audit-timeline", "audit"])
         await queryClient.invalidateQueries({ queryKey: [key, orgId] });
     },
     onError: () => {
@@ -293,6 +294,7 @@ function ApprovalDetailPage({ id }: { id: string }) {
               </Card>
             </div>
           </div>
+          <div className="mt-6"><AuditTimeline key={data.action.id} actionId={data.action.id} /></div>
         </>
       )}
     </>

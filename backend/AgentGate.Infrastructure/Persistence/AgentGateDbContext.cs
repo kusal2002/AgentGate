@@ -20,6 +20,7 @@ public sealed class AgentGateDbContext(DbContextOptions<AgentGateDbContext> opti
     public DbSet<Policy> Policies => Set<Policy>();
     public DbSet<ApprovalRequest> ApprovalRequests => Set<ApprovalRequest>();
     public DbSet<ApprovalDecision> ApprovalDecisions => Set<ApprovalDecision>();
+    public DbSet<AgentGate.Domain.Audit.AuditEvent> AuditEvents => Set<AgentGate.Domain.Audit.AuditEvent>();
     public DbSet<AgentGate.Domain.Slack.SlackIntegration> SlackIntegrations => Set<AgentGate.Domain.Slack.SlackIntegration>();
     public DbSet<AgentGate.Domain.Slack.SlackReviewer> SlackReviewers => Set<AgentGate.Domain.Slack.SlackReviewer>();
     public DbSet<AgentGate.Domain.Slack.SlackDelivery> SlackDeliveries => Set<AgentGate.Domain.Slack.SlackDelivery>();
@@ -41,6 +42,8 @@ public sealed class AgentGateDbContext(DbContextOptions<AgentGateDbContext> opti
     }
     private void GuardDecisions()
     {
+        if (ChangeTracker.Entries<AgentGate.Domain.Audit.AuditEvent>().Any(entry => entry.State is EntityState.Modified or EntityState.Deleted))
+            throw new InvalidOperationException("Audit events are append-only.");
         if (ChangeTracker.Entries<ApprovalDecision>().Any(entry => entry.State is EntityState.Modified or EntityState.Deleted))
             throw new InvalidOperationException("Approval decisions are append-only.");
     }

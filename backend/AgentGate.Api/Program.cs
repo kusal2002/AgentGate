@@ -8,6 +8,7 @@ builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddAccountAuthentication(builder.Configuration);
 builder.Services.AddAgentAuthentication();
 builder.Services.AddScoped<ICurrentAgent, CurrentAgent>();
+builder.Services.AddScoped<AgentGate.Application.Audit.IAuditContext, AgentGate.Api.Audit.AuditContext>();
 builder.Services.AddControllers();
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<AccountExceptionHandler>();

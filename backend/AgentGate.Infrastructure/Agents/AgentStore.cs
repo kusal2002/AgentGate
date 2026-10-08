@@ -5,10 +5,11 @@ using AgentGate.Domain.Agents;
 using AgentGate.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
+using AgentGate.Application.Audit;
 
 namespace AgentGate.Infrastructure.Agents;
 
-public sealed class AgentStore(AgentGateDbContext db) : IAgentStore
+public sealed class AgentStore(AgentGateDbContext db, IAuditWriter audit) : IAgentStore
 {
     public Task<Agent?> GetAsync(Guid organizationId, Guid agentId, CancellationToken ct) => db.Agents.SingleOrDefaultAsync(x => x.OrganizationId == organizationId && x.Id == agentId, ct);
     public async Task<IReadOnlyList<AgentDto>> ListAsync(Guid organizationId, CancellationToken ct) => await db.Agents.AsNoTracking()
@@ -21,6 +22,15 @@ public sealed class AgentStore(AgentGateDbContext db) : IAgentStore
     public void Add<T>(T entity) where T : class => db.Add(entity);
     public async Task SaveAsync(CancellationToken ct)
     {
+        foreach (var entry in db.ChangeTracker.Entries<Agent>().Where(x => x.State is EntityState.Added or EntityState.Modified).ToArray())
+        {
+            var agent = entry.Entity;
+            var type = entry.State == EntityState.Added ? "agent.created" : entry.Property(x => x.Status).IsModified
+                ? agent.Status == AgentStatus.Disabled ? "agent.disabled" : "agent.enabled" : "agent.updated";
+            audit.Management(agent.OrganizationId, type, new { environment = agent.Environment.ToString(), status = agent.Status.ToString() }, agent.Id);
+        }
+        foreach (var entry in db.ChangeTracker.Entries<AgentApiKey>().Where(x => x.State == EntityState.Added).ToArray())
+            audit.Management(entry.Entity.OrganizationId, "agent.key_created", new { keyId = entry.Entity.Id, entry.Entity.ExpiresAt }, entry.Entity.AgentId);
         try { await db.SaveChangesAsync(ct); }
         catch (DbUpdateConcurrencyException) { throw new RequestException(409, "This agent changed. Reload and retry."); }
         catch (DbUpdateException ex) when (ex.InnerException is PostgresException { SqlState: "23505" }) { throw new RequestException(409, "This agent or key already exists. Retry the request."); }
@@ -28,8 +38,17 @@ public sealed class AgentStore(AgentGateDbContext db) : IAgentStore
     public async Task<bool> RevokeAsync(Guid organizationId, Guid agentId, Guid keyId, CancellationToken ct)
     {
         var now = DateTimeOffset.UtcNow;
-        return await db.AgentApiKeys.Where(x => x.Id == keyId && x.OrganizationId == organizationId && x.AgentId == agentId)
-            .ExecuteUpdateAsync(set => set.SetProperty(x => x.RevokedAt, x => x.RevokedAt ?? now), ct) == 1;
+        await using var transaction = await db.Database.BeginTransactionAsync(ct);
+        var owned = db.AgentApiKeys.Where(x => x.Id == keyId && x.OrganizationId == organizationId && x.AgentId == agentId);
+        var changed = await owned.Where(x => x.RevokedAt == null).ExecuteUpdateAsync(set => set.SetProperty(x => x.RevokedAt, now), ct);
+        if (changed == 1)
+        {
+            audit.Management(organizationId, "agent.key_revoked", new { keyId }, agentId);
+            await db.SaveChangesAsync(ct);
+        }
+        var exists = changed == 1 || await owned.AnyAsync(ct);
+        await transaction.CommitAsync(ct);
+        return exists;
     }
     public async Task<AgentIdentityDto?> RecordAuthenticatedUseAsync(AgentApiKey key, CancellationToken ct)
     {

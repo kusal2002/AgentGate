@@ -6,10 +6,12 @@ using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using AgentGate.Application.Approvals;
 using AgentGate.Domain.Approvals;
+using AgentGate.Application.Audit;
+using AgentGate.Domain.Audit;
 
 namespace AgentGate.Infrastructure.Actions;
 
-public sealed class ActionStore(AgentGateDbContext db, IApprovalStore approvals, ApprovalSettings settings) : IActionStore
+public sealed class ActionStore(AgentGateDbContext db, IApprovalStore approvals, ApprovalSettings settings, IAuditWriter audit) : IActionStore
 {
     public async Task<AgentAction?> FindAsync(Guid organizationId, Guid agentId, string idempotencyKey, CancellationToken ct)
     {
@@ -21,6 +23,17 @@ public sealed class ActionStore(AgentGateDbContext db, IApprovalStore approvals,
         if (action.Decision == ActionDecision.Review && action.Status == ActionStatus.AwaitingApproval && !action.TestEvaluation)
             action.Approval = ApprovalRules.Create(action, settings);
         db.AgentActions.Add(action);
+        var events = new List<AuditEvent>();
+        events.Add(audit.Record(action.OrganizationId, "agent.action_requested", AuditActorType.Agent, action.AgentId,
+            new { action.TestEvaluation }, action.AgentId, action.Id, action.Approval?.Id, action.CreatedAt, 10));
+        if (!action.TestEvaluation)
+            events.Add(audit.Record(action.OrganizationId, "policy.evaluated", AuditActorType.Policy, action.MatchedPolicyId,
+                new { action.MatchedPolicyId, action.PolicyUpdatedAt, decision = action.Decision.ToString().ToLowerInvariant(), riskLevel = action.RiskLevel?.ToString(), action.ReviewerRole,
+                    environmentDefault = action.MatchedPolicyId is null }, action.AgentId, action.Id, action.Approval?.Id, action.CreatedAt, 20));
+        events.Add(audit.Record(action.OrganizationId, action.Decision switch { ActionDecision.Allow => "action.allowed", ActionDecision.Deny => "action.denied", _ => "action.review_required" },
+            AuditActorType.System, null, new { status = ActionService.StatusName(action.Status), action.TestEvaluation }, action.AgentId, action.Id, action.Approval?.Id, action.CreatedAt, 30));
+        if (action.Approval is { } approval)
+            events.Add(audit.Record(action.OrganizationId, "approval.created", AuditActorType.System, null, new { approval.ReviewerRole, approval.ExpiresAt }, action.AgentId, action.Id, approval.Id, action.CreatedAt, 40));
         try
         {
             // EF saves action and its approval together in one transaction.
@@ -30,6 +43,7 @@ public sealed class ActionStore(AgentGateDbContext db, IApprovalStore approvals,
         catch (DbUpdateException ex) when (ex.InnerException is PostgresException { SqlState: "23505", ConstraintName: "IX_AgentActions_OrganizationId_AgentId_IdempotencyKey" })
         {
             db.Entry(action).State = EntityState.Detached;
+            foreach (var row in events) db.Entry(row).State = EntityState.Detached;
             if (action.Approval is not null) db.Entry(action.Approval).State = EntityState.Detached;
             return await FindAsync(action.OrganizationId, action.AgentId, action.IdempotencyKey, ct) ?? throw new InvalidOperationException("Concurrent action could not be retrieved.");
         }
