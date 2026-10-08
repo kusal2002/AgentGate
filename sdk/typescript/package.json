@@ -1,0 +1,25 @@
+{
+  "name": "@agentgate/sdk",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Server-side TypeScript client for AgentGate authorization and human approval polling",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": { ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" } },
+  "files": ["dist", "README.md"],
+  "sideEffects": false,
+  "engines": { "node": ">=22.13.0" },
+  "license": "UNLICENSED",
+  "repository": { "type": "git", "url": "https://github.com/kusal2002/AgentGate.git", "directory": "sdk/typescript" },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p test/types/tsconfig.json",
+    "lint": "oxlint src test integration scripts examples --deny-warnings",
+    "test": "npm run build && node --test test/*.test.mjs",
+    "test:integration": "npm run build && node --test integration/*.test.mjs",
+    "test:package": "node scripts/verify-package.mjs",
+    "prepack": "npm run build"
+  },
+  "devDependencies": { "typescript": "6.0.2", "oxlint": "1.81.0" }
+}
