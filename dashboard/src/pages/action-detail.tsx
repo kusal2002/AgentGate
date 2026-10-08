@@ -1,3 +1,4 @@
+import { AuditTimeline } from '@/components/audit-timeline';
 import { Link, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
@@ -188,6 +189,7 @@ export function ActionDetailRoute() {
               ))}
             </div>
           </div>
+          <div className="mt-6"><AuditTimeline key={data.id} actionId={data.id} /></div>
         </>
       )}
     </>

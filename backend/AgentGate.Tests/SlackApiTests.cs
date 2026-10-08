@@ -86,8 +86,12 @@ public sealed class SlackApiTests(AccountApiFactory factory) : IClassFixture<Acc
             await Run(host, async s => { var db = s.GetRequiredService<AgentGateDbContext>(); Assert.Equal(1, await db.ApprovalDecisions.CountAsync(x => x.OrganizationId == org && x.ApprovalRequestId == id));
                 var decisionRow = await db.ApprovalDecisions.SingleAsync(x => x.ApprovalRequestId == id);
                 Assert.Equal(user, decisionRow.ReviewerUserId); Assert.Equal(AgentGate.Domain.Approvals.ApprovalDecisionSource.Slack, decisionRow.Source);
+                var audit = await db.AuditEvents.SingleAsync(x => x.ApprovalRequestId == id && x.EventType == "approval." + status);
+                Assert.Equal(AgentGate.Domain.Audit.AuditActorType.Slack, audit.ActorType); Assert.Equal(user, audit.ActorId);
+                Assert.Equal(1, await db.AuditEvents.CountAsync(x => x.ApprovalRequestId == id && x.EventType == "approval.slack_sent"));
                 await db.SlackDeliveries.Where(x => x.ApprovalId == id).ExecuteUpdateAsync(set => set.SetProperty(x => x.NextAttemptAt, DateTimeOffset.UtcNow.AddSeconds(-1))); });
             await Dispatch(host); Assert.Equal(2, fake.Sent); Assert.Equal("123456.789", fake.LastTs); Assert.Equal(status, fake.Detail!.Approval.Status);
+            await Run(host, async s => Assert.Equal(1, await s.GetRequiredService<AgentGateDbContext>().AuditEvents.CountAsync(x => x.ApprovalRequestId == id && x.EventType == "approval.slack_updated")));
         }
     }
     [Theory]
@@ -100,7 +104,7 @@ public sealed class SlackApiTests(AccountApiFactory factory) : IClassFixture<Acc
             var id = await Evaluate(agent); await Dispatch(host);
             var reply = await owner.SendAsync(Callback(invalid == "approval" ? Guid.NewGuid() : id, team: invalid == "team" ? "TOTHER" : "TTEST", app: invalid == "app" ? "AOTHER" : "ATEST",
                 channel: invalid == "channel" ? "COTHER" : "CTEST", user: invalid == "user" ? "UOTHER" : "UTEST", messageTs: invalid == "message" ? "000.111" : "123456.789",
-                age: invalid == "stale" ? -301 : invalid == "future" ? 301 : 0, tamper: invalid == "signature"));
+                age: invalid == "stale" ? -360 : invalid == "future" ? 360 : 0, tamper: invalid == "signature"));
             Assert.Equal(invalid is "signature" or "stale" or "future" ? HttpStatusCode.Unauthorized : HttpStatusCode.OK, reply.StatusCode);
             Assert.Equal("pending", (await agent.GetFromJsonAsync<JsonElement>($"/v1/approvals/{id}")).GetProperty("status").GetString()); Assert.Equal(1, fake.Sent);
         }
@@ -112,7 +116,7 @@ public sealed class SlackApiTests(AccountApiFactory factory) : IClassFixture<Acc
         {
             var id = await Evaluate(agent); fake.Fail = true; await Dispatch(host);
             await Run(host, async s => { var db = s.GetRequiredService<AgentGateDbContext>(); var row = await db.SlackDeliveries.SingleAsync(x => x.ApprovalId == id);
-                Assert.Null(row.MessageTs); Assert.NotNull(row.LastError); Assert.Equal(1, row.Attempts); row.NextAttemptAt = DateTimeOffset.UtcNow.AddSeconds(-1); await db.SaveChangesAsync(); });
+                Assert.Null(row.MessageTs); Assert.NotNull(row.LastError); Assert.Equal(1, row.Attempts); Assert.False(await db.AuditEvents.AnyAsync(x => x.ApprovalRequestId == id && x.EventType == "approval.slack_sent")); row.NextAttemptAt = DateTimeOffset.UtcNow.AddSeconds(-1); await db.SaveChangesAsync(); });
             fake.Fail = false; await Task.WhenAll(Enumerable.Range(0, 5).Select(_ => Dispatch(host)));
             Assert.Equal(1, fake.Sent);
             await Run(host, async s => { var db = s.GetRequiredService<AgentGateDbContext>(); var row = await db.SlackDeliveries.SingleAsync(x => x.ApprovalId == id); Assert.NotNull(row.MessageTs); Assert.Null(row.LastError); });

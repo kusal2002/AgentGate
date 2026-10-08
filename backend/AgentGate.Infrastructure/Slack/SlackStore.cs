@@ -9,9 +9,11 @@ using AgentGate.Infrastructure.Approvals;
 using AgentGate.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
+using AgentGate.Application.Audit;
+using AgentGate.Domain.Audit;
 namespace AgentGate.Infrastructure.Slack;
 
-public sealed class SlackStore(AgentGateDbContext db, SlackSettings settings, ISlackClient client, IApprovalStore approvals) : ISlackStore
+public sealed class SlackStore(AgentGateDbContext db, SlackSettings settings, ISlackClient client, IApprovalStore approvals, IAuditWriter audit) : ISlackStore
 {
     public async Task<SlackIntegrationDto> GetAsync(Guid org, CancellationToken ct)
     {
@@ -123,8 +125,11 @@ public sealed class SlackStore(AgentGateDbContext db, SlackSettings settings, IS
         var retryAfter = 0;
         try
         {
+            var initial = delivery.MessageTs is null;
             delivery.MessageTs = await client.SendAsync(delivery.ChannelId, delivery.MessageTs, detail, delivery.Id, ct);
             delivery.SentStatus = detail.Approval.Status; delivery.LastError = null; delivery.Attempts = 0;
+            audit.Record(org, initial ? "approval.slack_sent" : "approval.slack_updated", AuditActorType.System, null,
+                new { delivery.Id, delivery.ChannelId, status = detail.Approval.Status }, action.AgentId, action.Id, approval.Id);
         }
         catch (Exception ex) when (ex is RequestException or HttpRequestException or JsonException or TaskCanceledException)
         {

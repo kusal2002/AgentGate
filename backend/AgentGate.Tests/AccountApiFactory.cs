@@ -22,7 +22,8 @@ public sealed class AccountApiFactory : WebApplicationFactory<Program>, IAsyncLi
         builder.ConfigureHostConfiguration(config => config.AddInMemoryCollection(new Dictionary<string, string?>
         {
             ["ConnectionStrings:AgentGate"] = testConnection, ["JWT_SECRET"] = secret,
-            ["Auth:PermitLimit"] = "1000", ["AgentAuth:PermitLimit"] = "1000", ["Logging:LogLevel:Default"] = "None"
+            ["Auth:PermitLimit"] = "1000", ["AgentAuth:PermitLimit"] = "1000", ["Logging:LogLevel:Default"] = "None",
+            ["SLACK_BOT_TOKEN"] = "", ["SLACK_SIGNING_SECRET"] = "", ["SLACK_APP_ID"] = "", ["SLACK_TEAM_ID"] = "", ["SLACK_ORGANIZATION_ID"] = ""
         }));
         return base.CreateHost(builder);
     }
@@ -35,7 +36,8 @@ public sealed class AccountApiFactory : WebApplicationFactory<Program>, IAsyncLi
             ["JWT_SECRET"] = secret,
             ["Auth:PermitLimit"] = "1000",
             ["AgentAuth:PermitLimit"] = "1000",
-            ["Logging:LogLevel:Default"] = "None"
+            ["Logging:LogLevel:Default"] = "None",
+            ["SLACK_BOT_TOKEN"] = "", ["SLACK_SIGNING_SECRET"] = "", ["SLACK_APP_ID"] = "", ["SLACK_TEAM_ID"] = "", ["SLACK_ORGANIZATION_ID"] = ""
         }));
     }
     public async Task InitializeAsync()

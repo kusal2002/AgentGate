@@ -8,10 +8,12 @@ using AgentGate.Infrastructure.Actions;
 using AgentGate.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
+using AgentGate.Application.Audit;
+using AgentGate.Domain.Audit;
 
 namespace AgentGate.Infrastructure.Approvals;
 
-public sealed class ApprovalStore(AgentGateDbContext db) : IApprovalStore
+public sealed class ApprovalStore(AgentGateDbContext db, IAuditWriter audit) : IApprovalStore
 {
     public async Task<ApprovalPageDto> ListAsync(Guid organizationId, ApprovalStatus? status, int page, int pageSize, CancellationToken ct)
     {
@@ -73,6 +75,8 @@ public sealed class ApprovalStore(AgentGateDbContext db) : IApprovalStore
         action.Status = approve ? ActionStatus.Approved : ActionStatus.Rejected; action.UpdatedAt = now;
         db.ApprovalDecisions.Add(new() { OrganizationId = organizationId, ApprovalRequestId = id, ReviewerUserId = userId,
             Decision = approve ? ApprovalDecisionType.Approve : ApprovalDecisionType.Reject, Source = source, Comment = comment, CreatedAt = now });
+        audit.Record(organizationId, approve ? "approval.approved" : "approval.rejected", source == ApprovalDecisionSource.Slack ? AuditActorType.Slack : AuditActorType.User,
+            userId, new { source = source.ToString().ToLowerInvariant(), approval.ReviewerRole, status = approval.Status.ToString().ToLowerInvariant() }, action.AgentId, action.Id, id, now);
         await db.SaveChangesAsync(ct); await transaction.CommitAsync(ct);
     }
     public async Task ExpireDueAsync(Guid? organizationId, CancellationToken ct, Guid? actionId = null, Guid? approvalId = null)
@@ -99,8 +103,9 @@ public sealed class ApprovalStore(AgentGateDbContext db) : IApprovalStore
         }
         await transaction.CommitAsync(ct);
     }
-    private static void Expire(ApprovalRequest approval, AgentAction action, DateTimeOffset now)
+    private void Expire(ApprovalRequest approval, AgentAction action, DateTimeOffset now)
     {
+        audit.Record(approval.OrganizationId, "approval.expired", AuditActorType.System, null, new { approval.ExpiresAt }, action.AgentId, action.Id, approval.Id, now);
         approval.Status = ApprovalStatus.Expired; approval.ResolvedAt = now; approval.UpdatedAt = now;
         if (action.Status == ActionStatus.AwaitingApproval) { action.Status = ActionStatus.Cancelled; action.UpdatedAt = now; }
     }

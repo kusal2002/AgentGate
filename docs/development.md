@@ -31,7 +31,7 @@ For database update, use the launcher to import local database and JWT configura
 ./scripts/start-backend.ps1 -MigrateOnly
 ```
 
-EF CLI does not load `.env` automatically. For direct EF commands, export database variables and `JWT_SECRET` into your process first. The startup project supplies configuration and dependency injection; the migration assembly is Infrastructure. Current migrations are `AccountsAndAuthentication`, `AgentIdentityAndApiKeys`, `PersistedAgentActions`, `DeterministicPolicies`, `HumanApprovals`, `SlackIntegration`, and `SlackInteractionFeedback`. The local launcher also imports `Approvals__*` and `PolicyDefaults__*` from ignored `.env`; only Review/Deny no-match defaults are accepted.
+EF CLI does not load `.env` automatically. For direct EF commands, export database variables and `JWT_SECRET` into your process first. The startup project supplies configuration and dependency injection; the migration assembly is Infrastructure. Current migrations are `AccountsAndAuthentication`, `AgentIdentityAndApiKeys`, `PersistedAgentActions`, `DeterministicPolicies`, `HumanApprovals`, `SlackIntegration`, `SlackInteractionFeedback`, and `AppendOnlyAuditLog`. The local launcher also imports `Approvals__*` and `PolicyDefaults__*` from ignored `.env`; only Review/Deny no-match defaults are accepted.
 
 ## Troubleshooting
 
@@ -45,6 +45,6 @@ EF CLI does not load `.env` automatically. For direct EF commands, export databa
 
 ## Phase boundaries
 
-Phases 2–4 add accounts, organizations, agent identity, keys, persisted actions, and idempotency. Phase 5 adds deterministic policies, management, preview, and outcome snapshots. `./scripts/test-backend.ps1` runs all 208 tests in isolated PostgreSQL databases. The role must be able to create test databases. Use `-UnitOnly` for 97 role, key-format, action validation, policy evaluator, and approval permissions, and Slack signature/HTTP client cases without a database. See [policies.md](policies.md) for the manual checklist.
+Phases 2–4 add accounts, organizations, agent identity, keys, persisted actions, and idempotency. Phase 5 adds deterministic policies, management, preview, and outcome snapshots. `./scripts/test-backend.ps1` runs all 226 tests in isolated PostgreSQL databases. The role must be able to create test databases. Use `-UnitOnly` for 106 role, key-format, action validation, policy evaluator, and approval permissions, Slack signature/HTTP client, and audit redaction cases without a database. See [policies.md](policies.md) for the manual checklist.
 
-Phase 6 creates approval requests atomically for review outcomes and resolves them with transactional human decisions or deadline expiry. See [approvals.md](approvals.md) for configuration and manual checks. Phase 7 adds signed Slack interactions, durable message updates, and reviewer mappings; see [slack-setup.md](slack-setup.md). Audit events remain Phase 8. Historical temporary test allows cannot be replayed through the agent API after Phase 5.
+Phase 6 creates approval requests atomically for review outcomes and resolves them with transactional human decisions or deadline expiry. See [approvals.md](approvals.md) for configuration and manual checks. Phase 7 adds signed Slack interactions, durable message updates, and reviewer mappings; see [slack-setup.md](slack-setup.md). Phase 8 adds append-only authorization events and timelines; see [audit.md](audit.md) for migration snapshots, redaction, and manual checks. Historical temporary test allows cannot be replayed through the agent API after Phase 5.

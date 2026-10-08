@@ -4,10 +4,11 @@ using AgentGate.Domain.Policies;
 using AgentGate.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
+using AgentGate.Application.Audit;
 
 namespace AgentGate.Infrastructure.Policies;
 
-public sealed class PolicyStore(AgentGateDbContext db) : IPolicyStore
+public sealed class PolicyStore(AgentGateDbContext db, IAuditWriter audit) : IPolicyStore
 {
     public async Task<IReadOnlyList<Policy>> ListAsync(Guid organizationId, CancellationToken ct)
     {
@@ -21,6 +22,7 @@ public sealed class PolicyStore(AgentGateDbContext db) : IPolicyStore
     public void Add(Policy policy) => db.Policies.Add(policy);
     public async Task SaveAsync(CancellationToken ct)
     {
+        RecordChanges();
         try { await db.SaveChangesAsync(ct); }
         catch (DbUpdateConcurrencyException) { throw new RequestException(409, "This policy changed. Reload before saving."); }
     }
@@ -33,12 +35,23 @@ public sealed class PolicyStore(AgentGateDbContext db) : IPolicyStore
         var existing = await db.Policies.Where(x => x.OrganizationId == organizationId && x.SeedKey != null).Select(x => x.SeedKey).ToListAsync(ct);
         var missing = policies.Where(x => !existing.Contains(x.SeedKey)).ToArray();
         db.Policies.AddRange(missing);
+        RecordChanges();
         try { await db.SaveChangesAsync(ct); await transaction.CommitAsync(ct); }
         catch (DbUpdateException error) when (error.InnerException is PostgresException { SqlState: "23505", ConstraintName: "IX_Policies_OrganizationId_SeedKey" })
         {
             await transaction.RollbackAsync(ct);
             foreach (var policy in missing) db.Entry(policy).State = EntityState.Detached;
+            foreach (var row in db.ChangeTracker.Entries<AgentGate.Domain.Audit.AuditEvent>().Where(x => x.State == EntityState.Added).ToArray()) row.State = EntityState.Detached;
             // Another seed request inserted the same complete set atomically.
+        }
+    }
+    private void RecordChanges()
+    {
+        foreach (var entry in db.ChangeTracker.Entries<Policy>().Where(x => x.State is EntityState.Added or EntityState.Modified).ToArray())
+        {
+            var policy = entry.Entity;
+            audit.Management(policy.OrganizationId, entry.State == EntityState.Added ? "policy.created" : "policy.updated",
+                new { policyId = policy.Id, policy.Priority, policy.Enabled, decision = policy.Decision.ToString(), policy.ReviewerRole, riskLevel = policy.RiskLevel.ToString(), sample = policy.SeedKey is not null });
         }
     }
 }

@@ -86,7 +86,7 @@ npm run dev
 
 Open [the dashboard](http://localhost:5173) and create an account. The API listens at [localhost:5000](http://localhost:5000/health). Vite forwards `/api/*` to the backend, retaining the prefix for account, agent, action, and policy APIs and stripping it for health endpoints. No CORS configuration is needed for local development. This proxy is a development feature; production hosting needs a same-origin HTTPS reverse proxy.
 
-The dashboard displays service health, accounts/organizations, agent management (including disable/enable and key expiry presets), and Actions history with filtering, pagination, details, and recent requests per agent. Policies includes rule management, a condition builder, and previews. Approvals includes pending requests, reviewer decisions/comments, history, and expiry. Settings includes Slack channel configuration and reviewer mappings. Audit log remains a placeholder.
+The dashboard displays service health, accounts/organizations, agent management (including disable/enable and key expiry presets), and Actions history with filtering, pagination, details, and recent requests per agent. Policies includes rule management, a condition builder, and previews. Approvals includes pending requests, reviewer decisions/comments, history, and expiry. Settings includes Slack channel configuration and reviewer mappings. Audit log includes filtered, paginated events, event details, and timelines on action and approval pages.
 
 ## Verify
 
@@ -101,7 +101,7 @@ Invoke-RestMethod http://localhost:5000/health/ready
 
 `/health` returns 200 while the API is running, independently of the database. `/health/ready` checks PostgreSQL and returns 200 if reachable or 503 otherwise. No credentials or exception details are returned to the browser.
 
-The migrations create users, organizations, memberships, hashed refresh sessions, agents, hashed API keys, persisted actions, policies, approval requests, append-only approval decisions, Slack settings/mappings, and durable delivery/feedback records. Apply them with the `-MigrateOnly` command above. Migration tooling and the workflow are described in [development.md](docs/development.md).
+The migrations create users, organizations, memberships, hashed refresh sessions, agents, hashed API keys, persisted actions, policies, approval requests, append-only approval decisions and audit events, Slack settings/mappings, and durable delivery/feedback records. Phase 8 imports existing actions as explicit historical snapshots; full event recording starts when the audit migration is applied. Apply migrations with the `-MigrateOnly` command above. Migration tooling and the workflow are described in [development.md](docs/development.md).
 
 Stop the database with `docker compose stop postgres`. Its data survives restart in the named volume. Changing `.env` does not change the password of an already initialized PostgreSQL volume; update the database role password or deliberately recreate the local volume.
 
@@ -117,5 +117,6 @@ Stop the database with `docker compose stop postgres`. Its data survives restart
 - [Persisted actions and phase verification](docs/actions.md)
 - [Policies and Phase 5 checks](docs/policies.md)
 - [Human approvals and Phase 6 checks](docs/approvals.md)
+- [Audit log and Phase 8 checks](docs/audit.md)
 
 The demo refund workflow is planned for later phases. Connect your existing Slack app using [Phase 7 setup and live checks](docs/slack-setup.md). No AI provider integration is required.
