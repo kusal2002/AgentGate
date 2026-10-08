@@ -110,4 +110,4 @@ npm --prefix dashboard run build
 npm --prefix dashboard run lint
 ```
 
-The full suite has 207 tests and unit-only has 96. Coverage includes approval/rejection aliases, role hierarchy, tenant/agent/scheme separation, concurrent retries, mixed decisions, expiry races and maintenance, transaction rollback, restart/configuration, migration backfill, append-only protection, comments/input validation, filtering, and pagination. Integration tests create/drop isolated PostgreSQL databases.
+The full suite has 208 tests and unit-only has 97. Coverage includes approval/rejection aliases, role hierarchy, tenant/agent/scheme separation, concurrent retries, mixed decisions, expiry races and maintenance, transaction rollback, restart/configuration, migration backfill, append-only protection, comments/input validation, filtering, and pagination. Integration tests create/drop isolated PostgreSQL databases.

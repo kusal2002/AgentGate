@@ -62,7 +62,7 @@ Phase 4 replaced the `amountMinor` prototype with the persisted action API. Agen
 
 ## Verification
 
-`./scripts/test-backend.ps1` runs the current backend suite in isolated PostgreSQL databases (207 tests after Phase 7). `-UnitOnly` runs role, key-format, and action payload tests without a database. `npm --prefix dashboard run build` and `npm --prefix dashboard run lint` verify the frontend.
+`./scripts/test-backend.ps1` runs the current backend suite in isolated PostgreSQL databases (208 tests after Phase 7). `-UnitOnly` runs role, key-format, and action payload tests without a database. `npm --prefix dashboard run build` and `npm --prefix dashboard run lint` verify the frontend.
 
 Coverage includes all five roles, tenant isolation across agents and keys, environment prefixes, random key generation, one-time responses and hash-only storage, immutable environments, server-derived identity, JWT/key scheme separation, tampered/malformed/unknown keys, revocation, expiry, agent disable/enable, organization suspension, last-use tracking, input validation, action test evaluation boundaries, and rate limiting before invalid-key authentication.
 

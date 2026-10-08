@@ -133,4 +133,4 @@ npm --prefix dashboard run build
 npm --prefix dashboard run lint
 ```
 
-The full suite has 207 tests and unit-only has 96. Coverage includes the ten operators, threshold boundaries, ordinal matching, nested fields, missing/null/type behavior, priority conflicts, defaults, role and tenant isolation, optimistic concurrency, concurrent seeding, preview/persisted agreement, production policy evaluation, stable historical snapshots/retries, and blocked legacy test allows. PostgreSQL integration tests create and drop isolated databases.
+The full suite has 208 tests and unit-only has 97. Coverage includes the ten operators, threshold boundaries, ordinal matching, nested fields, missing/null/type behavior, priority conflicts, defaults, role and tenant isolation, optimistic concurrency, concurrent seeding, preview/persisted agreement, production policy evaluation, stable historical snapshots/retries, and blocked legacy test allows. PostgreSQL integration tests create and drop isolated databases.

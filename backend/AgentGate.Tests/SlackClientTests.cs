@@ -13,6 +13,20 @@ public sealed class SlackClientTests
     private static SlackClient Client(Func<HttpRequestMessage, Task<HttpResponseMessage>> send) => new(new HttpClient(new Handler(send)), new("synthetic-token", "synthetic-secret", "ATEST", "TTEST", Guid.NewGuid()));
     private static HttpResponseMessage Json(object body) => new(HttpStatusCode.OK) { Content = new StringContent(JsonSerializer.Serialize(body)) };
     [Fact]
+    public async Task ReviewerLookupUsesGetWithUserQueryAndBearerHeader()
+    {
+        var client = Client(request =>
+        {
+            Assert.Equal(HttpMethod.Get, request.Method);
+            Assert.Equal("https://slack.com/api/users.info?user=UTEST", request.RequestUri!.AbsoluteUri);
+            Assert.Null(request.Content);
+            Assert.Equal("Bearer", request.Headers.Authorization!.Scheme);
+            Assert.Equal("synthetic-token", request.Headers.Authorization.Parameter);
+            return Task.FromResult(Json(new { ok = true, user = new { id = "UTEST", team_id = "TTEST", deleted = false, is_bot = false } }));
+        });
+        await client.VerifyReviewerAsync("UTEST", default);
+    }
+    [Fact]
     public async Task PostAndUpdateOnlyContainSafeSummaryAndOpaqueButtons()
     {
         var id = Guid.NewGuid(); var now = DateTimeOffset.UtcNow;
