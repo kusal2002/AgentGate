@@ -70,6 +70,10 @@ Private feedback uses `chat.postEphemeral`, independently of acknowledgment, and
 
 **Interaction error:** check HTTPS tunnel, Request URL, App ID/workspace/signing secret, and system clock. Rotated secrets reject requests signed with the old secret.
 
+**Button reports HTTP 404:** keep `ngrok http 5000` running and save its current HTTPS URL plus `/api/integrations/slack/actions` in Interactivity & Shortcuts. The tunnel must point to the backend on port 5000. A changed/stopped tunnel or incorrect path will not reach the callback. The callback is POST-only; visiting it in a browser is not an approval test.
+
+**Reviewer lookup:** the client uses the documented GET `users.info?user=…` endpoint with Bearer authorization. Live verification found that sending the member ID in a JSON POST returned `user_not_found` even for a valid workspace member.
+
 **Permission feedback:** correct the explicit mapping or AgentGate role. The required role is the original policy snapshot. Optional reviewer comments remain available in the dashboard; buttons record “Decision made through Slack.”
 
 ## Automated checks
